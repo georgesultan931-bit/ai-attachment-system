@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+
+        <div>
+            <h2 class="fw-bold mb-1">
+                My Notifications
+                <span class="badge bg-danger">
+                    {{ unread_count }}
+                </span>
+            </h2>
+
+            <small class="text-muted">
+                Only notifications belonging to {{ request.user.username }} are shown here.
+            </small>
+        </div>
+
+        <div class="d-flex gap-2">
+
+            <a href="{% url 'mark_notifications_read' %}"
+               class="btn btn-primary">
+                Mark All Read
+            </a>
+
+            <a href="{% url 'clear_all_notifications' %}"
+               class="btn btn-danger"
+               onclick="return confirm('Clear all your notifications?');">
+                Clear All
+            </a>
+
+        </div>
+
+    </div>
+
+    {% for notification in notifications %}
+
+        <div class="card mb-3 shadow-sm border-0">
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between align-items-start gap-3">
+
+                    <div>
+
+                        {% if not notification.is_read %}
+                            <span class="badge bg-success mb-2">
+                                New
+                            </span>
+                        {% endif %}
+
+                        <p class="mb-2">
+                            {{ notification.message }}
+                        </p>
+
+                        <small class="text-muted">
+                            {{ notification.created_at }}
+                        </small>
+
+                    </div>
+
+                    <a href="{% url 'delete_notification' notification.id %}"
+                       class="btn btn-sm btn-outline-danger"
+                       onclick="return confirm('Delete this notification?');">
+                        Delete
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    {% empty %}
+
+        <div class="alert alert-info">
+            No notifications available for your account.
+        </div>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}

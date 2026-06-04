@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>AI Internship & Attachment System</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        body {
+            background: #eef3f7;
+            color: #0f172a;
+            font-family: "Segoe UI", Arial, sans-serif;
+            transition: .3s;
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 268px;
+            background: linear-gradient(180deg, #102027, #12343b 58%, #0f766e);
+            color: white;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            padding: 22px 16px;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            font-size: 20px;
+            font-weight: 900;
+            margin-bottom: 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-box {
+            background: rgba(255,255,255,.13);
+            border: 1px solid rgba(255,255,255,.18);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 22px;
+        }
+
+        .avatar-circle {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 800;
+            color: white;
+        }
+
+        .avatar-image {
+            object-fit: cover;
+            background: #ffffff;
+        }
+
+        .sidebar-section {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.55);
+            margin: 18px 12px 8px;
+            letter-spacing: .08em;
+        }
+
+        .sidebar-link {
+            color: rgba(255,255,255,.85);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            transition: .22s;
+            font-weight: 600;
+            position: relative;
+        }
+
+        .sidebar-link:hover {
+            background: rgba(255,255,255,.15);
+            color: white;
+            transform: translateX(3px);
+        }
+
+        .sidebar-link.active {
+            background: white;
+            color: #0f172a;
+            box-shadow: 0 12px 28px rgba(0,0,0,.18);
+        }
+
+        .sidebar-link i {
+            font-size: 18px;
+        }
+
+        .quick-panel {
+            background: rgba(255,255,255,.12);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 22px;
+        }
+
+        .quick-panel small {
+            color: rgba(255,255,255,.7);
+        }
+
+        .logout-btn {
+            background: #ffffff;
+            color: #0f172a !important;
+            margin-top: 15px;
+        }
+
+        .main-content {
+            margin-left: 268px;
+            width: calc(100% - 268px);
+            min-height: 100vh;
+        }
+
+        .topbar {
+            height: 76px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 26px;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+
+        .content-wrapper {
+            padding: 26px;
+        }
+
+        .card {
+            border-radius: 8px;
+            border: none;
+        }
+
+        .btn {
+            border-radius: 8px;
+        }
+
+        footer {
+            padding: 25px;
+            color: #64748b;
+            text-align: center;
+        }
+
+        body.dark-mode {
+            background: #0b1220;
+            color: #e5e7eb;
+        }
+
+        body.dark-mode .topbar,
+        body.dark-mode .card {
+            background: #1e293b;
+            color: #e5e7eb;
+        }
+
+        body.dark-mode .table {
+            color: #e5e7eb;
+        }
+
+        body.dark-mode .bg-light {
+            background: #1e293b !important;
+            color: #e5e7eb;
+        }
+
+        body.dark-mode .text-muted {
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode input,
+        body.dark-mode textarea,
+        body.dark-mode select {
+            background: #0f172a;
+            color: #e5e7eb;
+            border-color: #334155;
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                padding: 14px;
+                white-space: nowrap;
+            }
+
+            .layout {
+                display: block;
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .topbar {
+                position: relative;
+                height: auto;
+                gap: 12px;
+                flex-wrap: wrap;
+                padding: 16px;
+            }
+
+            .content-wrapper {
+                padding: 16px;
+            }
+
+            .sidebar-brand {
+                margin-bottom: 12px;
+            }
+
+            .sidebar-section,
+            .user-box,
+            .quick-panel {
+                display: none;
+            }
+
+            .sidebar-link {
+                display: inline-flex;
+                margin-right: 8px;
+                margin-bottom: 0;
+                padding: 10px 12px;
+                vertical-align: middle;
+            }
+
+            .logout-btn {
+                margin-top: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <div class="sidebar-brand">
+            <i class="bi bi-cpu-fill"></i>
+            AI Internship
+        </div>
+
+        {% if user.is_authenticated %}
+
+            <div class="user-box">
+
+                <div class="d-flex align-items-center gap-3">
+
+                    {% if dashboard_profile_image_url %}
+
+                        <img src="{{ dashboard_profile_image_url }}"
+                             alt="{{ user.username }}"
+                             class="avatar-circle avatar-image">
+
+                    {% else %}
+
+                        <div class="avatar-circle">
+                            {{ user.username|slice:":1"|upper }}
+                        </div>
+
+                    {% endif %}
+
+                    <div>
+                        <strong>
+                            {{ user.username }}
+                        </strong>
+
+                        <br>
+
+                        <small class="text-white-50">
+                            {{ user.role|title }}
+                        </small>
+                    </div>
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+        <div class="sidebar-section">
+            Main
+        </div>
+
+        <a class="sidebar-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+           href="{% url 'home' %}">
+            <i class="bi bi-house-door"></i>
+            Home
+        </a>
+
+        {% if user.is_authenticated %}
+
+            <a class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+               href="{% url 'dashboard' %}">
+                <i class="bi bi-speedometer2"></i>
+                Dashboard
+            </a>
+
+            <a class="sidebar-link {% if request.resolver_match.url_name == 'notification_list' %}active{% endif %}"
+               href="{% url 'notification_list' %}">
+                <i class="bi bi-bell-fill"></i>
+                Notifications
+
+                {% if unread_notifications > 0 %}
+                    <span class="badge bg-danger rounded-pill ms-auto">
+                        {{ unread_notifications }}
+                    </span>
+                {% endif %}
+            </a>
+
+            {% if user.role == 'student' %}
+
+                <div class="sidebar-section">
+                    Student
+                </div>
+
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'student_profile' %}active{% endif %}"
+                   href="{% url 'student_profile' %}">
+                    <i class="bi bi-person-circle"></i>
+                    My Profile
+                </a>
+
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'edit_student_profile' %}active{% endif %}"
+                   href="{% url 'edit_student_profile' %}">
+                    <i class="bi bi-pencil-square"></i>
+                    Edit Profile
+                </a>
+
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'opportunity_list' %}active{% endif %}"
+                   href="{% url 'opportunity_list' %}">
+                    <i class="bi bi-briefcase"></i>
+                    Opportunities
+                </a>
+
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'my_applications' %}active{% endif %}"
+                   href="{% url 'my_applications' %}">
+                    <i class="bi bi-file-earmark-text"></i>
+                    My Applications
+                </a>
+
+            {% endif %}
+
+            {% if user.role == 'employer' %}
+
+                <div class="sidebar-section">
+                    Employer
+                </div>
+
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'employer_profile' %}active{% endif %}"
+                   href="{% url 'employer_profile' %}">
+                    <i class="bi bi-building"></i>
+                    Company Profile
+                </a>
+
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'edit_employer_profile' %}active{% endif %}"
+                   href="{% url 'edit_employer_profile' %}">
+                    <i class="bi bi-pencil-square"></i>
+                    Edit Company
+                </a>
+
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'create_opportunity' %}active{% endif %}"
+                   href="{% url 'create_opportunity' %}">
+                    <i class="bi bi-plus-circle"></i>
+                    Post Opportunity
+                </a>
+
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'my_opportunities' %}active{% endif %}"
+                   href="{% url 'my_opportunities' %}">
+                    <i class="bi bi-folder"></i>
+                    My Opportunities
+                </a>
+
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'employer_applications' %}active{% endif %}"
+                   href="{% url 'employer_applications' %}">
+                    <i class="bi bi-people"></i>
+                    Applications
+                </a>
+
+            {% endif %}
+
+            <div class="quick-panel">
+
+                <small>
+                    Quick Panel
+                </small>
+
+                <div class="mt-2 d-flex justify-content-between">
+                    <span>Alerts</span>
+                    <strong>{{ unread_notifications }}</strong>
+                </div>
+
+                <div class="mt-2 d-flex justify-content-between">
+                    <span>Status</span>
+                    <strong>Online</strong>
+                </div>
+
+            </div>
+
+            <a class="sidebar-link logout-btn"
+               href="{% url 'logout' %}">
+                <i class="bi bi-box-arrow-right"></i>
+                Logout
+            </a>
+
+        {% else %}
+
+            <div class="sidebar-section">
+                Account
+            </div>
+
+            <a class="sidebar-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}"
+               href="{% url 'login' %}">
+                <i class="bi bi-box-arrow-in-right"></i>
+                Login
+            </a>
+
+            <a class="sidebar-link {% if request.resolver_match.url_name == 'student_register' %}active{% endif %}"
+               href="{% url 'student_register' %}">
+                <i class="bi bi-person-plus"></i>
+                Student Register
+            </a>
+
+            <a class="sidebar-link {% if request.resolver_match.url_name == 'employer_register' %}active{% endif %}"
+               href="{% url 'employer_register' %}">
+                <i class="bi bi-building-add"></i>
+                Employer Register
+            </a>
+
+        {% endif %}
+
+    </aside>
+
+    <main class="main-content">
+
+        <div class="topbar">
+
+            <div>
+                <h5 class="mb-0 fw-bold">
+                    AI Internship & Attachment System
+                </h5>
+
+                <small class="text-muted">
+                    Smart recruitment, matching and analytics platform
+                </small>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+
+                {% if user.is_authenticated %}
+                    <span class="text-muted small">
+                        {{ user.username }}
+                    </span>
+                {% endif %}
+
+                <button class="btn btn-outline-dark btn-sm"
+                        id="themeToggle"
+                        type="button">
+                    <i class="bi bi-moon-fill"></i>
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="content-wrapper">
+
+            {% if messages %}
+                {% for message in messages %}
+
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm">
+                        {{ message }}
+
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="alert">
+                        </button>
+                    </div>
+
+                {% endfor %}
+            {% endif %}
+
+            {% block content %}
+            {% endblock %}
+
+        </div>
+
+        <footer>
+            <strong>AI Internship & Attachment System</strong><br>
+            Intelligent recruitment and internship management platform.
+        </footer>
+
+    </main>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const toggleButton = document.getElementById('themeToggle');
+    const body = document.body;
+
+    if (localStorage.getItem('theme') === 'dark') {
+        body.classList.add('dark-mode');
+        toggleButton.innerHTML = '<i class="bi bi-sun-fill"></i>';
+    }
+
+    toggleButton.addEventListener('click', function () {
+        body.classList.toggle('dark-mode');
+
+        if (body.classList.contains('dark-mode')) {
+            localStorage.setItem('theme', 'dark');
+            toggleButton.innerHTML = '<i class="bi bi-sun-fill"></i>';
+        } else {
+            localStorage.setItem('theme', 'light');
+            toggleButton.innerHTML = '<i class="bi bi-moon-fill"></i>';
+        }
+    });
+</script>
+
+</body>
+</html>

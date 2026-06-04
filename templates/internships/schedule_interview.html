@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1 class="fw-bold mb-4">
+    Schedule Interview
+</h1>
+
+<div class="card shadow border-0">
+    <div class="card-body">
+
+        <h5 class="mb-3">
+            {{ application.student.user.username }}
+            -
+            {{ application.opportunity.title }}
+        </h5>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label">Interview Date</label>
+                {{ form.interview_date }}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Interview Time</label>
+                {{ form.interview_time }}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Location / Meeting Link</label>
+                {{ form.interview_location }}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Interview Notes</label>
+                {{ form.interview_notes }}
+            </div>
+
+            <button class="btn btn-success" type="submit">
+                Schedule Interview
+            </button>
+
+            <a class="btn btn-outline-dark"
+               href="{% url 'application_detail' application.id %}">
+                Cancel
+            </a>
+
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}

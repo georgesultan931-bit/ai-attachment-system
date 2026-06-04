@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+.register-card {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, .08);
+}
+</style>
+
+<div class="row justify-content-center">
+    <div class="col-xl-7 col-lg-9">
+        <div class="card register-card">
+            <div class="card-body p-4 p-md-5">
+                <span class="badge text-bg-success mb-3">Student Account</span>
+
+                <h1 class="fw-bold mb-2">Create Student Account</h1>
+                <p class="text-muted mb-4">
+                    Register with your real email and phone number. An admin will send your verification code after review.
+                </p>
+
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        Please correct the highlighted details and try again.
+                    </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold" for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                            </label>
+                            {{ field }}
+
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    <button class="btn btn-dark btn-lg w-100" type="submit">
+                        <i class="bi bi-person-plus me-1"></i>
+                        Register as Student
+                    </button>
+
+                    <div class="text-center mt-3">
+                        <a href="{% url 'login' %}">Already have an account? Login</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

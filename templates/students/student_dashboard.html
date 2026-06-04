@@ -1,0 +1,477 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+
+<style>
+.student-hero {
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, .08);
+    overflow: hidden;
+}
+
+.student-hero-copy {
+    padding: clamp(24px, 4vw, 38px);
+}
+
+.student-hero-visual {
+    min-height: 260px;
+    background: #ecfeff;
+}
+
+.student-hero-visual img {
+    width: 100%;
+    height: 100%;
+    min-height: 260px;
+    object-fit: cover;
+}
+
+.profile-photo {
+    width: 112px;
+    height: 112px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #ffffff;
+    box-shadow: 0 12px 26px rgba(15, 23, 42, .18);
+}
+
+.profile-placeholder {
+    width: 112px;
+    height: 112px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #0f766e;
+    color: #ffffff;
+    font-size: 46px;
+    border: 4px solid #ffffff;
+    box-shadow: 0 12px 26px rgba(15, 23, 42, .18);
+}
+
+.dashboard-card,
+.stat-tile {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, .06);
+}
+
+.stat-tile {
+    background: #ffffff;
+    padding: 20px;
+    height: 100%;
+}
+
+.stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    margin-bottom: 12px;
+}
+
+.icon-teal { background: #0f766e; }
+.icon-blue { background: #2563eb; }
+.icon-amber { background: #d97706; }
+.icon-coral { background: #dc2626; }
+
+.section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.simple-row {
+    padding: 14px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.simple-row:last-child {
+    border-bottom: 0;
+}
+
+body.dark-mode .student-hero,
+body.dark-mode .dashboard-card,
+body.dark-mode .stat-tile {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+body.dark-mode .simple-row {
+    border-color: #334155;
+}
+</style>
+
+<div class="student-hero mb-4">
+    <div class="row g-0 align-items-stretch">
+        <div class="col-xl-7">
+            <div class="student-hero-copy">
+                <div class="d-flex align-items-center gap-3 flex-wrap mb-4">
+                    {% if profile.profile_picture %}
+                        <img src="{{ profile.profile_picture.url }}"
+                             alt="{{ profile.full_name }}"
+                             class="profile-photo">
+                    {% else %}
+                        <div class="profile-placeholder">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                    {% endif %}
+
+                    <div>
+                        <span class="badge text-bg-success mb-2">
+                            Student Dashboard
+                        </span>
+                        <h1 class="fw-bold mb-1">
+                            {{ profile.first_name }} {{ profile.surname }}
+                        </h1>
+                        <p class="text-muted mb-0">
+                            {{ profile.course }} at {{ profile.institution }}
+                        </p>
+                    </div>
+                </div>
+
+                <p class="text-muted mb-4">
+                    Keep your profile, documents, skills and referees updated so employers can match you accurately.
+                </p>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{% url 'edit_student_profile' %}"
+                       class="btn btn-dark">
+                        <i class="bi bi-pencil-square me-1"></i>
+                        Edit Profile
+                    </a>
+
+                    <a href="{% url 'opportunity_list' %}"
+                       class="btn btn-outline-dark">
+                        <i class="bi bi-briefcase me-1"></i>
+                        View Opportunities
+                    </a>
+
+                    <a href="{% url 'generate_resume_pdf' %}"
+                       class="btn btn-outline-success">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>
+                        Download Resume
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-5 student-hero-visual">
+            <img src="{% static 'images/student-dashboard-visual.png' %}"
+                 alt="Student progress dashboard visual">
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-tile">
+            <div class="stat-icon icon-teal">
+                <i class="bi bi-person-check-fill"></i>
+            </div>
+            <h3 class="fw-bold mb-1">{{ profile_completion }}%</h3>
+            <p class="text-muted mb-0">Profile complete</p>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-tile">
+            <div class="stat-icon icon-blue">
+                <i class="bi bi-file-earmark-text-fill"></i>
+            </div>
+            <h3 class="fw-bold mb-1">{{ total_applications }}</h3>
+            <p class="text-muted mb-0">Applications</p>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-tile">
+            <div class="stat-icon icon-amber">
+                <i class="bi bi-calendar-event-fill"></i>
+            </div>
+            <h3 class="fw-bold mb-1">{{ interview_count }}</h3>
+            <p class="text-muted mb-0">Interviews</p>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-tile">
+            <div class="stat-icon icon-coral">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <h3 class="fw-bold mb-1">{{ accepted_count }}</h3>
+            <p class="text-muted mb-0">Accepted</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-4">
+        <div class="card dashboard-card h-100">
+            <div class="card-body p-4">
+                <div class="section-heading">
+                    <h4 class="fw-bold mb-0">Profile Summary</h4>
+                    <a href="{% url 'edit_student_profile' %}"
+                       class="btn btn-sm btn-outline-dark">
+                        Edit
+                    </a>
+                </div>
+
+                <div class="simple-row">
+                    <small class="text-muted d-block">Location</small>
+                    <strong>{{ profile.home_county }}, {{ profile.town }}</strong>
+                </div>
+
+                <div class="simple-row">
+                    <small class="text-muted d-block">Phone</small>
+                    <strong>{{ profile.phone_number }}</strong>
+                </div>
+
+                <div class="simple-row">
+                    <small class="text-muted d-block">Skills</small>
+                    <span>{{ profile.skills|truncatewords:18 }}</span>
+                </div>
+
+                <div class="simple-row">
+                    <small class="text-muted d-block">CV</small>
+                    {% if profile.cv %}
+                        <a href="{{ profile.cv.url }}" target="_blank">View uploaded CV</a>
+                    {% else %}
+                        <span class="text-muted">No CV uploaded</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card dashboard-card h-100">
+            <div class="card-body p-4">
+                <div class="section-heading">
+                    <h4 class="fw-bold mb-0">Notifications</h4>
+                    <a href="{% url 'notification_list' %}"
+                       class="btn btn-sm btn-outline-dark">
+                        View All
+                    </a>
+                </div>
+
+                {% for notification in recent_notifications %}
+                    <div class="simple-row">
+                        {% if not notification.is_read %}
+                            <span class="badge text-bg-success mb-2">New</span>
+                        {% endif %}
+                        <p class="mb-1">{{ notification.message }}</p>
+                        <small class="text-muted">{{ notification.created_at }}</small>
+                    </div>
+                {% empty %}
+                    <p class="text-muted mb-0">No notifications available for your account.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card dashboard-card h-100">
+            <div class="card-body p-4">
+                <div class="section-heading">
+                    <h4 class="fw-bold mb-0">Top Matches</h4>
+                    <a href="{% url 'opportunity_list' %}"
+                       class="btn btn-sm btn-outline-dark">
+                        More
+                    </a>
+                </div>
+
+                {% for item in recommended_opportunities %}
+                    <div class="simple-row">
+                        <div class="d-flex justify-content-between gap-3">
+                            <div>
+                                <strong>{{ item.opportunity.title }}</strong>
+                                <div class="text-muted small">{{ item.opportunity.employer.company_name }}</div>
+                            </div>
+                            <span class="badge text-bg-success align-self-start">{{ item.score }}%</span>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted mb-0">No open opportunities available yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-6">
+        <div class="card dashboard-card h-100">
+            <div class="card-body p-4">
+                <div class="section-heading">
+                    <h4 class="fw-bold mb-0">Academic Qualifications</h4>
+                    <a href="{% url 'add_academic_qualification' %}"
+                       class="btn btn-sm btn-dark">
+                        <i class="bi bi-plus-lg"></i>
+                        Add
+                    </a>
+                </div>
+
+                {% for qual in qualifications %}
+                    <div class="simple-row">
+                        <div class="d-flex justify-content-between gap-3">
+                            <div>
+                                <strong>{{ qual.qualification }}</strong>
+                                <div class="text-muted small">
+                                    {{ qual.institution_name }}{% if qual.course_name %} - {{ qual.course_name }}{% endif %}
+                                </div>
+                                <small class="text-muted">
+                                    {{ qual.start_year }} - {{ qual.end_year|default:"Present" }}
+                                </small>
+                            </div>
+                            <div class="d-flex gap-2 align-self-start">
+                                <a href="{% url 'edit_qualification' qual.id %}"
+                                   class="btn btn-sm btn-outline-dark"
+                                   title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'delete_qualification' qual.id %}"
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('Delete this qualification?')"
+                                   title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted mb-0">No qualifications added yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6">
+        <div class="card dashboard-card h-100">
+            <div class="card-body p-4">
+                <div class="section-heading">
+                    <h4 class="fw-bold mb-0">Work Experience</h4>
+                    <a href="{% url 'add_work_experience' %}"
+                       class="btn btn-sm btn-dark">
+                        <i class="bi bi-plus-lg"></i>
+                        Add
+                    </a>
+                </div>
+
+                {% for work in work_experiences %}
+                    <div class="simple-row">
+                        <div class="d-flex justify-content-between gap-3">
+                            <div>
+                                <strong>{{ work.position }}</strong>
+                                <div class="text-muted small">{{ work.organization }}</div>
+                                <small class="text-muted">
+                                    {{ work.start_date|date:"M Y" }} - {{ work.end_date|date:"M Y"|default:"Present" }}
+                                </small>
+                            </div>
+                            <div class="d-flex gap-2 align-self-start">
+                                <a href="{% url 'edit_work' work.id %}"
+                                   class="btn btn-sm btn-outline-dark"
+                                   title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'delete_work' work.id %}"
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('Delete this experience?')"
+                                   title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted mb-0">No work experience added yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6">
+        <div class="card dashboard-card h-100">
+            <div class="card-body p-4">
+                <div class="section-heading">
+                    <h4 class="fw-bold mb-0">Referees</h4>
+                    <a href="{% url 'add_referee' %}"
+                       class="btn btn-sm btn-dark">
+                        <i class="bi bi-plus-lg"></i>
+                        Add
+                    </a>
+                </div>
+
+                {% for referee in referees %}
+                    <div class="simple-row">
+                        <div class="d-flex justify-content-between gap-3">
+                            <div>
+                                <strong>{{ referee.full_name }}</strong>
+                                <div class="text-muted small">
+                                    {{ referee.position }}{% if referee.organization %}, {{ referee.organization }}{% endif %}
+                                </div>
+                                <small class="text-muted">{{ referee.phone_number }}{% if referee.email %} - {{ referee.email }}{% endif %}</small>
+                            </div>
+                            <div class="d-flex gap-2 align-self-start">
+                                <a href="{% url 'edit_referee' referee.id %}"
+                                   class="btn btn-sm btn-outline-dark"
+                                   title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'delete_referee' referee.id %}"
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('Delete this referee?')"
+                                   title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted mb-0">No referees added yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6">
+        <div class="card dashboard-card h-100">
+            <div class="card-body p-4">
+                <div class="section-heading">
+                    <h4 class="fw-bold mb-0">Recent Applications</h4>
+                    <a href="{% url 'my_applications' %}"
+                       class="btn btn-sm btn-outline-dark">
+                        View All
+                    </a>
+                </div>
+
+                {% for application in recent_applications %}
+                    <div class="simple-row">
+                        <div class="d-flex justify-content-between gap-3">
+                            <div>
+                                <strong>{{ application.opportunity.title }}</strong>
+                                <div class="text-muted small">{{ application.opportunity.employer.company_name }}</div>
+                            </div>
+                            <span class="badge text-bg-secondary align-self-start">
+                                {{ application.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted mb-0">No applications submitted yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+.opportunity-card{
+    border:none;
+    border-radius:28px;
+    box-shadow:0 15px 35px rgba(15,23,42,.08);
+    transition:.25s;
+}
+
+.opportunity-card:hover{
+    transform:translateY(-5px);
+}
+
+.company-logo{
+    width:70px;
+    height:70px;
+    border-radius:18px;
+    object-fit:cover;
+    border:3px solid #e5e7eb;
+}
+
+.skill-badge{
+    border-radius:50px;
+    padding:8px 12px;
+}
+</style>
+
+<h1 class="mb-4 fw-bold">
+    Recommended Opportunities
+</h1>
+
+<form method="get" class="mb-4">
+
+    <div class="input-group">
+
+        <input type="text"
+               name="q"
+               class="form-control"
+               placeholder="Search jobs, companies, locations..."
+               value="{{ query }}">
+
+        <button class="btn btn-dark">
+            Search
+        </button>
+
+    </div>
+
+</form>
+
+<div class="row g-4">
+
+{% for result in matched_results %}
+
+<div class="col-lg-6">
+
+    <div class="card opportunity-card h-100">
+
+        <div class="card-body p-4">
+
+            <div class="d-flex align-items-center gap-3 mb-4">
+
+                {% if result.opportunity.employer.logo %}
+
+                    <img src="{{ result.opportunity.employer.logo.url }}"
+                         class="company-logo">
+
+                {% else %}
+
+                    <div class="company-logo d-flex align-items-center justify-content-center bg-light">
+                        <i class="bi bi-building fs-3"></i>
+                    </div>
+
+                {% endif %}
+
+                <div>
+
+                    <h5 class="fw-bold mb-1">
+                        {{ result.opportunity.title }}
+                    </h5>
+
+                    <small class="text-muted">
+                        {{ result.opportunity.employer.company_name }}
+                    </small>
+
+                </div>
+
+            </div>
+
+            <div class="mb-4">
+
+                <div class="d-flex justify-content-between">
+
+                    <strong>AI Match Score</strong>
+
+                    <strong>
+                        {{ result.score }}%
+                    </strong>
+
+                </div>
+
+                <div class="progress mt-2"
+                     style="height:12px;">
+
+                    {% if result.score >= 80 %}
+
+                        <div class="progress-bar bg-success"
+                             style="width:{{ result.score }}%">
+                        </div>
+
+                    {% elif result.score >= 50 %}
+
+                        <div class="progress-bar bg-warning"
+                             style="width:{{ result.score }}%">
+                        </div>
+
+                    {% else %}
+
+                        <div class="progress-bar bg-danger"
+                             style="width:{{ result.score }}%">
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+            <div class="mb-3">
+
+                <span class="badge bg-primary">
+                    {{ result.opportunity.get_internship_type_display }}
+                </span>
+
+                <span class="badge bg-secondary">
+                    {{ result.opportunity.location }}
+                </span>
+
+            </div>
+
+            <div class="mb-3">
+
+                <p class="mb-1">
+                    <strong>Employer Required Skills:</strong>
+                </p>
+
+                <p class="text-muted small mb-3">
+                    {{ result.opportunity.required_skills }}
+                </p>
+
+                <div class="mb-2">
+                    <small class="fw-bold text-success d-block mb-2">
+                        Skills You Meet
+                    </small>
+
+                    {% for skill in result.matched_skills %}
+
+                        <span class="badge bg-success skill-badge">
+                            {{ skill }}
+                        </span>
+
+                    {% empty %}
+
+                        <span class="text-muted small">
+                            No required skills matched yet.
+                        </span>
+
+                    {% endfor %}
+                </div>
+
+                <div>
+                    <small class="fw-bold text-danger d-block mb-2">
+                        Skills Still Missing
+                    </small>
+
+                    {% for skill in result.missing_skills %}
+
+                        <span class="badge bg-danger skill-badge">
+                            {{ skill }}
+                        </span>
+
+                    {% empty %}
+
+                        <span class="text-success small">
+                            You meet all listed required skills.
+                        </span>
+
+                    {% endfor %}
+                </div>
+
+            </div>
+
+            <p>
+                <strong>Deadline:</strong>
+                {{ result.opportunity.deadline }}
+            </p>
+
+            <p>
+                <strong>Available Slots:</strong>
+                {{ result.opportunity.slots_available }}
+            </p>
+
+            <div class="d-flex gap-2 flex-wrap">
+
+                <a href="{% url 'opportunity_detail' result.opportunity.id %}"
+                   class="btn btn-outline-dark">
+                    View Details
+                </a>
+
+                {% if result.already_applied %}
+
+                    <button class="btn btn-secondary" disabled>
+                        Already Applied
+                    </button>
+
+                {% else %}
+
+                    <a href="{% url 'apply_opportunity' result.opportunity.id %}"
+                       class="btn btn-primary">
+                        Apply Now
+                    </a>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% empty %}
+
+<div class="alert alert-warning">
+    No recommended opportunities available.
+</div>
+
+{% endfor %}
+
+</div>
+
+{% endblock %}

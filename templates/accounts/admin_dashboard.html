@@ -1,0 +1,760 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    .dashboard-header {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        color: #0f172a;
+        margin-bottom: 30px;
+        overflow: hidden;
+        box-shadow: 0 16px 36px rgba(15, 23, 42, .08);
+    }
+
+    .dashboard-header-copy {
+        padding: clamp(24px, 4vw, 38px);
+    }
+
+    .dashboard-header-visual {
+        min-height: 260px;
+        background: #fff7ed;
+    }
+
+    .dashboard-header-visual img {
+        width: 100%;
+        height: 100%;
+        min-height: 260px;
+        object-fit: cover;
+    }
+
+    .kpi-card {
+        border-radius: 8px;
+        color: white;
+        padding: 28px;
+        min-height: 165px;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .kpi-card::after {
+        content: "";
+        position: absolute;
+        width: 150px;
+        height: 150px;
+        right: -45px;
+        bottom: -45px;
+        background: rgba(255,255,255,0.18);
+        border-radius: 50%;
+    }
+
+    .kpi-icon {
+        font-size: 42px;
+        opacity: 0.9;
+    }
+
+    .premium-card {
+        border-radius: 8px;
+        border: none;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    }
+
+    .mini-stat {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+
+    body.dark-mode .mini-stat {
+        background: #0f172a;
+    }
+</style>
+
+<div class="dashboard-header">
+
+    <div class="row g-0 align-items-stretch">
+
+        <div class="col-xl-7">
+            <div class="dashboard-header-copy">
+                <span class="badge text-bg-warning mb-3 px-3 py-2">
+                    AI Recruitment Intelligence
+                </span>
+
+                <h1 class="fw-bold mb-2">
+                    System Analytics Dashboard
+                </h1>
+
+                <p class="mb-4 text-muted">
+                    Monitor applications, interviews, opportunities, skills demand and placement performance.
+                </p>
+
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div>
+                        <h2 class="fw-bold mb-0">{{ placement_rate }}%</h2>
+                        <small class="text-muted">Placement Rate</small>
+                    </div>
+
+                    <a href="#pending-approvals"
+                       class="btn btn-dark">
+                        <i class="bi bi-shield-check me-1"></i>
+                        Review Approvals
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-5 dashboard-header-visual">
+            <img src="{% static 'images/admin-dashboard-visual.png' %}"
+                 alt="Admin analytics dashboard visual">
+        </div>
+
+    </div>
+
+</div>
+
+<div class="row g-4 mb-4">
+
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <p class="mb-1">Total Students</p>
+                    <h1 class="fw-bold">{{ total_students }}</h1>
+                    <small>Registered learners</small>
+                </div>
+                <i class="bi bi-mortarboard-fill kpi-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card" style="background:linear-gradient(135deg,#0ea5e9,#06b6d4);">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <p class="mb-1">Employers</p>
+                    <h1 class="fw-bold">{{ total_employers }}</h1>
+                    <small>Hiring partners</small>
+                </div>
+                <i class="bi bi-building-fill kpi-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card" style="background:linear-gradient(135deg,#10b981,#22c55e);">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <p class="mb-1">Opportunities</p>
+                    <h1 class="fw-bold">{{ total_opportunities }}</h1>
+                    <small>Open & closed posts</small>
+                </div>
+                <i class="bi bi-briefcase-fill kpi-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card" style="background:linear-gradient(135deg,#f97316,#ef4444);">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <p class="mb-1">Applications</p>
+                    <h1 class="fw-bold">{{ total_applications }}</h1>
+                    <small>Total submissions</small>
+                </div>
+                <i class="bi bi-file-earmark-text-fill kpi-icon"></i>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row g-4 mb-4">
+
+    <div class="col-xl-8">
+        <div class="card premium-card h-100">
+            <div class="card-body p-4">
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h4 class="fw-bold mb-1">Application Pipeline</h4>
+                        <small class="text-muted">Recruitment activity by status</small>
+                    </div>
+
+                    <span class="badge bg-dark rounded-pill px-3 py-2">
+                        Live Funnel
+                    </span>
+                </div>
+
+                <canvas id="applicationChart"></canvas>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card premium-card h-100">
+            <div class="card-body p-4">
+
+                <h4 class="fw-bold mb-4">Recruitment Summary</h4>
+
+                <div class="mini-stat d-flex justify-content-between">
+                    <span>Pending</span>
+                    <strong>{{ pending_count }}</strong>
+                </div>
+
+                <div class="mini-stat d-flex justify-content-between">
+                    <span>Shortlisted</span>
+                    <strong>{{ shortlisted_count }}</strong>
+                </div>
+
+                <div class="mini-stat d-flex justify-content-between">
+                    <span>Interviews</span>
+                    <strong>{{ interview_scheduled_count }}</strong>
+                </div>
+
+                <div class="mini-stat d-flex justify-content-between">
+                    <span>Accepted</span>
+                    <strong>{{ accepted_count }}</strong>
+                </div>
+
+                <div class="mini-stat d-flex justify-content-between">
+                    <span>Rejected</span>
+                    <strong>{{ rejected_count }}</strong>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row g-4 mb-4">
+
+    <div class="col-xl-5">
+        <div class="card premium-card h-100">
+            <div class="card-body p-4">
+
+                <h4 class="fw-bold mb-3">Opportunity Status</h4>
+                <canvas id="opportunityChart"></canvas>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-7">
+        <div class="card premium-card h-100">
+            <div class="card-body p-4">
+
+                <h4 class="fw-bold mb-3">Top Skills in Demand</h4>
+                <canvas id="skillsChart"></canvas>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="card premium-card mb-4" id="pending-approvals">
+
+    <div class="card-body p-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <div>
+                <h4 class="fw-bold mb-1">
+                    Pending User Approvals
+                </h4>
+
+                <small class="text-muted">
+                    Registered users waiting for verification codes
+                </small>
+            </div>
+
+            <span class="badge bg-warning text-dark rounded-pill px-3 py-2">
+                Admin Action
+            </span>
+
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="table table-hover align-middle">
+
+                <thead class="table-dark">
+
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Phone</th>
+                        <th>Email Verified</th>
+                        <th>Action</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for user in pending_users %}
+
+                    <tr>
+
+                        <td class="fw-semibold">{{ user.username }}</td>
+
+                        <td>{{ user.email }}</td>
+
+                        <td>
+                            {% if user.role == 'student' %}
+                                <span class="badge bg-primary rounded-pill">Student</span>
+                            {% elif user.role == 'employer' %}
+                                <span class="badge bg-info text-dark rounded-pill">Employer</span>
+                            {% else %}
+                                <span class="badge bg-dark rounded-pill">Admin</span>
+                            {% endif %}
+                        </td>
+
+                        <td>{{ user.phone_number }}</td>
+
+                        <td>
+                            {% if user.is_email_verified %}
+                                <span class="badge bg-success rounded-pill">Verified</span>
+                            {% elif user.otp_code %}
+                                <span class="badge bg-warning text-dark rounded-pill">Code Sent</span>
+                            {% else %}
+                                <span class="badge bg-danger rounded-pill">Not Verified</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if user.is_email_verified %}
+                                <a href="{% url 'approve_user' user.id %}"
+                                   class="btn btn-success btn-sm">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    Approve
+                                </a>
+                            {% else %}
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'send_user_verification_code_channel' user.id 'email' %}"
+                                       class="btn btn-outline-primary">
+                                        <i class="bi bi-envelope-fill"></i>
+                                        Email Code
+                                    </a>
+
+                                    <a href="{% url 'send_user_verification_code_channel' user.id 'whatsapp' %}"
+                                       class="btn btn-outline-success">
+                                        <i class="bi bi-whatsapp"></i>
+                                        WhatsApp Code
+                                    </a>
+
+                                    <a href="{% url 'send_user_verification_code_channel' user.id 'both' %}"
+                                       class="btn btn-primary">
+                                        <i class="bi bi-send-fill"></i>
+                                        Both
+                                    </a>
+                                </div>
+                            {% endif %}
+
+                            <a href="{% url 'reject_user' user.id %}"
+                               class="btn btn-danger btn-sm"
+                               onclick="return confirm('Reject and delete this user?');">
+                                <i class="bi bi-x-circle-fill"></i>
+                                Reject
+                            </a>
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">
+                            No pending approvals.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card premium-card mb-4">
+
+    <div class="card-body p-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <div>
+                <h4 class="fw-bold mb-1">
+                    User Management
+                </h4>
+
+                <small class="text-muted">
+                    View students/employers, confirm profile status, and delete invalid accounts.
+                </small>
+            </div>
+
+            <span class="badge bg-danger rounded-pill px-3 py-2">
+                Admin Only
+            </span>
+
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="table table-hover align-middle">
+
+                <thead class="table-dark">
+
+                    <tr>
+                        <th>Username</th>
+                        <th>Name / Company</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Profile Status</th>
+                        <th>Action</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for item in all_users_data %}
+
+                    <tr>
+
+                        <td class="fw-semibold">
+                            {{ item.user.username }}
+                        </td>
+
+                        <td>
+                            {{ item.profile_name }}
+                        </td>
+
+                        <td>
+                            {{ item.user.email }}
+                        </td>
+
+                        <td>
+                            {% if item.user.role == 'student' %}
+                                <span class="badge bg-primary rounded-pill">
+                                    Student
+                                </span>
+                            {% elif item.user.role == 'employer' %}
+                                <span class="badge bg-info text-dark rounded-pill">
+                                    Employer
+                                </span>
+                            {% else %}
+                                <span class="badge bg-dark rounded-pill">
+                                    Admin
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if item.profile_status == 'Exists' %}
+                                <span class="badge bg-success rounded-pill">
+                                    Profile Exists
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger rounded-pill">
+                                    Profile Not Created
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <a href="{% url 'delete_user_account' item.user.id %}"
+                               class="btn btn-danger btn-sm"
+                               onclick="return confirm('Delete this user permanently? This cannot be undone.');">
+                                <i class="bi bi-trash-fill"></i>
+                                Delete
+                            </a>
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">
+                            No users found.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card premium-card mb-4">
+
+    <div class="card-body p-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <div>
+                <h4 class="fw-bold mb-1">Recent Applications</h4>
+                <small class="text-muted">Latest student application activity</small>
+            </div>
+
+            <span class="badge bg-primary rounded-pill px-3 py-2">
+                Live Activity
+            </span>
+
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="table table-hover align-middle">
+
+                <thead class="table-dark">
+                    <tr>
+                        <th>Student</th>
+                        <th>Opportunity</th>
+                        <th>Employer</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for application in recent_applications %}
+
+                        <tr>
+                            <td class="fw-semibold">
+                                {{ application.student.full_name|default:application.student.user.username }}
+                            </td>
+
+                            <td>
+                                {{ application.opportunity.title }}
+                            </td>
+
+                            <td>
+                                {{ application.opportunity.employer.company_name }}
+                            </td>
+
+                            <td>
+                                {% if application.status == 'accepted' %}
+                                    <span class="badge bg-success rounded-pill">Accepted</span>
+                                {% elif application.status == 'rejected' %}
+                                    <span class="badge bg-danger rounded-pill">Rejected</span>
+                                {% elif application.status == 'shortlisted' %}
+                                    <span class="badge bg-warning text-dark rounded-pill">Shortlisted</span>
+                                {% elif application.status == 'interview_scheduled' %}
+                                    <span class="badge bg-info text-dark rounded-pill">Interview</span>
+                                {% else %}
+                                    <span class="badge bg-secondary rounded-pill">Pending</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {{ application.applied_at }}
+                            </td>
+                        </tr>
+
+                    {% empty %}
+
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">
+                                No applications yet.
+                            </td>
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card premium-card mb-4">
+
+    <div class="card-body p-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <div>
+                <h4 class="fw-bold mb-1">
+                    My Notifications
+                </h4>
+
+                <small class="text-muted">
+                    Only notifications assigned to your admin account are shown here.
+                </small>
+            </div>
+
+            <a href="{% url 'notification_list' %}"
+               class="btn btn-dark">
+                View All
+            </a>
+
+        </div>
+
+        {% for notification in recent_notifications %}
+
+            <div class="d-flex justify-content-between align-items-start gap-3 border-bottom pb-3 mb-3">
+
+                <div>
+
+                    {% if not notification.is_read %}
+                        <span class="badge bg-success rounded-pill mb-2">
+                            New
+                        </span>
+                    {% endif %}
+
+                    <p class="mb-1">
+                        {{ notification.message }}
+                    </p>
+
+                    <small class="text-muted">
+                        {{ notification.created_at }}
+                    </small>
+
+                </div>
+
+            </div>
+
+        {% empty %}
+
+            <p class="text-muted mb-0">
+                No notifications available for your account.
+            </p>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{{ top_skill_labels|json_script:"topSkillLabels" }}
+{{ top_skill_counts|json_script:"topSkillCounts" }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const applicationCtx = document.getElementById('applicationChart');
+
+new Chart(applicationCtx, {
+    type: 'bar',
+    data: {
+        labels: ['Pending', 'Shortlisted', 'Interview', 'Accepted', 'Rejected'],
+        datasets: [{
+            data: [
+                {{ pending_count }},
+                {{ shortlisted_count }},
+                {{ interview_scheduled_count }},
+                {{ accepted_count }},
+                {{ rejected_count }}
+            ],
+            backgroundColor: [
+                '#64748b',
+                '#f59e0b',
+                '#06b6d4',
+                '#22c55e',
+                '#ef4444'
+            ],
+            borderRadius: 18
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: '#e5e7eb' }
+            },
+            x: {
+                grid: { display: false }
+            }
+        }
+    }
+});
+
+const opportunityCtx = document.getElementById('opportunityChart');
+
+new Chart(opportunityCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Open', 'Closed'],
+        datasets: [{
+            data: [
+                {{ open_opportunities }},
+                {{ closed_opportunities }}
+            ],
+            backgroundColor: ['#22c55e', '#ef4444'],
+            borderWidth: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        cutout: '68%'
+    }
+});
+
+const skillLabels = JSON.parse(
+    document.getElementById('topSkillLabels').textContent
+);
+
+const skillCounts = JSON.parse(
+    document.getElementById('topSkillCounts').textContent
+);
+
+const skillsCtx = document.getElementById('skillsChart');
+
+new Chart(skillsCtx, {
+    type: 'bar',
+    data: {
+        labels: skillLabels,
+        datasets: [{
+            data: skillCounts,
+            backgroundColor: '#6366f1',
+            borderRadius: 18
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                grid: { color: '#e5e7eb' }
+            },
+            y: {
+                grid: { display: false }
+            }
+        }
+    }
+});
+</script>
+
+{% endblock %}

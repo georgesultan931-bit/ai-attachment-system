@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1 class="mb-4 fw-bold">Student Dashboard</h1>
+
+<div class="row g-4">
+
+    <div class="col-md-6">
+        <div class="card shadow border-0">
+            <div class="card-body">
+                <h4>Recommended Opportunities</h4>
+                <p>View internships and attachments matched to your skills.</p>
+                <a class="btn btn-primary" href="{% url 'opportunity_list' %}">
+                    View Opportunities
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow border-0">
+            <div class="card-body">
+                <h4>My Applications</h4>
+                <p>Track your submitted applications and status updates.</p>
+                <a class="btn btn-success" href="{% url 'my_applications' %}">
+                    View Applications
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

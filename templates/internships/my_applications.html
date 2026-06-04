@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1 class="mb-4 fw-bold">
+    My Applications
+</h1>
+
+<a class="btn btn-secondary mb-3" href="{% url 'dashboard' %}">
+    Back to Dashboard
+</a>
+
+<div class="card shadow border-0 mb-4">
+    <div class="card-body">
+
+        <h4 class="fw-bold mb-3">
+            Upcoming Interviews
+        </h4>
+
+        {% for application in applications %}
+
+            {% if application.interview_date %}
+
+                <div class="alert alert-info">
+
+                    <h5 class="fw-bold mb-2">
+                        {{ application.opportunity.title }}
+                    </h5>
+
+                    <p class="mb-1">
+                        <strong>Company:</strong>
+                        {{ application.opportunity.employer.company_name }}
+                    </p>
+
+                    <p class="mb-1">
+                        <strong>Date:</strong>
+                        {{ application.interview_date }}
+                    </p>
+
+                    <p class="mb-1">
+                        <strong>Time:</strong>
+                        {{ application.interview_time }}
+                    </p>
+
+                    <p class="mb-1">
+                        <strong>Venue / Link:</strong>
+                        {{ application.interview_location }}
+                    </p>
+
+                    {% if application.interview_notes %}
+
+                        <p class="mb-0">
+                            <strong>Notes:</strong>
+                            {{ application.interview_notes }}
+                        </p>
+
+                    {% endif %}
+
+                </div>
+
+            {% endif %}
+
+        {% empty %}
+
+            <p class="text-muted">
+                No applications yet.
+            </p>
+
+        {% endfor %}
+
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+
+        <h4 class="fw-bold mb-3">
+            Application History
+        </h4>
+
+        <div class="table-responsive">
+
+            <table class="table table-bordered table-hover align-middle">
+
+                <thead class="table-dark">
+                    <tr>
+                        <th>Opportunity</th>
+                        <th>Company</th>
+                        <th>Status</th>
+                        <th>Applied Date</th>
+                        <th>Interview Details</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                {% for application in applications %}
+
+                    <tr>
+                        <td>
+                            {{ application.opportunity.title }}
+                        </td>
+
+                        <td>
+                            {{ application.opportunity.employer.company_name }}
+                        </td>
+
+                        <td>
+                            {% if application.status == 'accepted' %}
+
+                                <span class="badge bg-success">
+                                    Accepted
+                                </span>
+
+                            {% elif application.status == 'rejected' %}
+
+                                <span class="badge bg-danger">
+                                    Rejected
+                                </span>
+
+                            {% elif application.status == 'shortlisted' %}
+
+                                <span class="badge bg-primary">
+                                    Shortlisted
+                                </span>
+
+                            {% elif application.status == 'interview_scheduled' %}
+
+                                <span class="badge bg-info text-dark">
+                                    Interview Scheduled
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge bg-warning text-dark">
+                                    Pending
+                                </span>
+
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ application.applied_at }}
+                        </td>
+
+                        <td>
+                            {% if application.interview_date %}
+
+                                <div class="small">
+                                    <strong>Date:</strong>
+                                    {{ application.interview_date }}<br>
+
+                                    <strong>Time:</strong>
+                                    {{ application.interview_time }}<br>
+
+                                    <strong>Venue/Link:</strong>
+                                    {{ application.interview_location }}<br>
+
+                                    {% if application.interview_notes %}
+
+                                        <strong>Notes:</strong>
+                                        {{ application.interview_notes }}
+
+                                    {% endif %}
+                                </div>
+
+                            {% else %}
+
+                                <span class="text-muted">
+                                    Not scheduled yet
+                                </span>
+
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                {% empty %}
+
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">
+                            No applications found.
+                        </td>
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

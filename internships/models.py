@@ -1,0 +1,128 @@
+from django.db import models
+
+from employers.models import EmployerProfile
+from students.models import StudentProfile
+
+
+class InternshipOpportunity(models.Model):
+
+    INTERNSHIP_TYPE_CHOICES = (
+        ('attachment', 'Industrial Attachment'),
+        ('internship', 'Internship'),
+        ('graduate_trainee', 'Graduate Trainee'),
+    )
+
+    STATUS_CHOICES = (
+        ('open', 'Open'),
+        ('closed', 'Closed'),
+    )
+
+    employer = models.ForeignKey(
+        EmployerProfile,
+        on_delete=models.CASCADE,
+        related_name='opportunities'
+    )
+
+    title = models.CharField(
+        max_length=255
+    )
+
+    internship_type = models.CharField(
+        max_length=30,
+        choices=INTERNSHIP_TYPE_CHOICES
+    )
+
+    description = models.TextField()
+
+    required_skills = models.TextField()
+
+    location = models.CharField(
+        max_length=255
+    )
+
+    slots_available = models.PositiveIntegerField()
+
+    deadline = models.DateField()
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='open'
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+        return self.title
+
+
+class Application(models.Model):
+
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('reviewed', 'Reviewed'),
+        ('shortlisted', 'Shortlisted'),
+        ('interview_scheduled', 'Interview Scheduled'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+    )
+
+    INTERVIEW_RESPONSE_CHOICES = (
+        ('pending', 'Pending Response'),
+        ('accepted', 'Accepted Interview'),
+        ('declined', 'Declined Interview'),
+    )
+
+    student = models.ForeignKey(
+        StudentProfile,
+        on_delete=models.CASCADE
+    )
+
+    opportunity = models.ForeignKey(
+        InternshipOpportunity,
+        on_delete=models.CASCADE
+    )
+
+    status = models.CharField(
+        max_length=30,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+
+    interview_date = models.DateField(
+        blank=True,
+        null=True
+    )
+
+    interview_time = models.TimeField(
+        blank=True,
+        null=True
+    )
+
+    interview_location = models.CharField(
+        max_length=255,
+        blank=True
+    )
+
+    interview_notes = models.TextField(
+        blank=True
+    )
+
+    interview_response = models.CharField(
+        max_length=30,
+        choices=INTERVIEW_RESPONSE_CHOICES,
+        default='pending'
+    )
+
+    interview_response_note = models.TextField(
+        blank=True
+    )
+
+    applied_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+        return f"{self.student.user.username} - {self.opportunity.title}"

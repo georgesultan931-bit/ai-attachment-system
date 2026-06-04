@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #f8f9fc;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 30px;
+        border: 1px solid #e3e6f0;
+    }
+    .form-section h4 {
+        color: #4e73df;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #4e73df;
+    }
+    .required-field label:after {
+        content: " *";
+        color: red;
+    }
+    .help-text {
+        font-size: 12px;
+        color: #858796;
+        margin-top: 5px;
+    }
+    .errorlist {
+        color: red;
+        list-style: none;
+        padding: 0;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">{{ title }}</h3>
+                    <p class="mb-0">Please fill in all required information marked with *</p>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Personal Information -->
+                        <div class="form-section">
+                            <h4><i class="fas fa-user"></i> Personal Information</h4>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label>Salutation *</label>
+                                    {{ form.salutation }}
+                                    {% if form.salutation.errors %}
+                                        <ul class="errorlist">{{ form.salutation.errors }}</ul>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label>Surname *</label>
+                                    {{ form.surname }}
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label>First Name *</label>
+                                    {{ form.first_name }}
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label>Other Names</label>
+                                    {{ form.other_names }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label>ID Number *</label>
+                                    {{ form.id_number }}
+                                    <div class="help-text">8-digit ID number</div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label>Huduma Number</label>
+                                    {{ form.huduma_number }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label>Date of Birth *</label>
+                                    {{ form.date_of_birth }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label>Gender *</label>
+                                    {{ form.gender }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label>KRA PIN</label>
+                                    {{ form.kra_pin }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label>Nationality *</label>
+                                    {{ form.nationality }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Location Information -->
+                        <div class="form-section">
+                            <h4><i class="fas fa-map-marker-alt"></i> Location Information</h4>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label>Home County *</label>
+                                    {{ form.home_county }}
+                                    <datalist id="countyList">
+                                        {% for county in counties %}
+                                            <option value="{{ county.1 }}">{{ county.1 }}</option>
+                                        {% endfor %}
+                                    </datalist>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>Home Constituency *</label>
+                                    {{ form.home_constituency }}
+                                    <datalist id="constituencyList">
+                                        {% for constituency in constituencies %}
+                                            <option value="{{ constituency.1 }}">{{ constituency.1 }}</option>
+                                        {% endfor %}
+                                    </datalist>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label>Sub-County</label>
+                                    {{ form.sub_county }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>Ward</label>
+                                    {{ form.home_ward }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label>Postal Address *</label>
+                                    {{ form.postal_address }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label>Postal Code *</label>
+                                    {{ form.postal_code }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label>Town/City *</label>
+                                    {{ form.town }}
+                                    <datalist id="townList">
+                                        {% for town in towns %}
+                                            <option value="{{ town.1 }}">{{ town.1 }}</option>
+                                        {% endfor %}
+                                    </datalist>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label>Phone Number *</label>
+                                    {{ form.phone_number }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>Current Location *</label>
+                                    {{ form.location }}
+                                    <div class="help-text">Where are you currently staying?</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Demographics -->
+                        <div class="form-section">
+                            <h4><i class="fas fa-users"></i> Demographics</h4>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label>Ethnicity *</label>
+                                    {{ form.ethnicity }}
+                                    <datalist id="ethnicityList">
+                                        {% for ethnicity in ethnic_groups %}
+                                            <option value="{{ ethnicity.1 }}">{{ ethnicity.1 }}</option>
+                                        {% endfor %}
+                                    </datalist>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>Disability Status</label>
+                                    {{ form.disability }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Education -->
+                        <div class="form-section">
+                            <h4><i class="fas fa-graduation-cap"></i> Education</h4>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label>Institution *</label>
+                                    {{ form.institution }}
+                                    <datalist id="institutionList">
+                                        {% for institution in institutions %}
+                                            <option value="{{ institution.1 }}">{{ institution.1 }}</option>
+                                        {% endfor %}
+                                    </datalist>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>Course/Program *</label>
+                                    {{ form.course }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Professional Information -->
+                        <div class="form-section">
+                            <h4><i class="fas fa-code"></i> Professional Information</h4>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label>Skills *</label>
+                                    {{ form.skills }}
+                                    <div class="help-text">List your skills separated by commas (e.g., Python, Django, HTML)</div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label>Bio *</label>
+                                    {{ form.bio }}
+                                    <div class="help-text">Brief description about yourself, career goals, and interests</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Social Links -->
+                        <div class="form-section">
+                            <h4><i class="fas fa-link"></i> Social & Professional Links</h4>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label>GitHub</label>
+                                    {{ form.github }}
+                                    <div class="help-text">Optional</div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label>LinkedIn</label>
+                                    {{ form.linkedin }}
+                                    <div class="help-text">Optional</div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label>Portfolio</label>
+                                    {{ form.portfolio }}
+                                    <div class="help-text">Optional</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Alternative Contact -->
+                        <div class="form-section">
+                            <h4><i class="fas fa-phone-alt"></i> Emergency/Alternative Contact</h4>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label>Contact Person Name</label>
+                                    {{ form.alternative_contact_name }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>Contact Person Phone</label>
+                                    {{ form.alternative_contact_phone }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Documents -->
+                        <div class="form-section">
+                            <h4><i class="fas fa-file-upload"></i> Documents</h4>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label>Profile Picture *</label>
+                                    {{ form.profile_picture }}
+                                    {% if profile.profile_picture %}
+                                        <div class="mt-2">
+                                            <img src="{{ profile.profile_picture.url }}" alt="Current Profile" style="height: 100px;">
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>CV/Resume *</label>
+                                    {{ form.cv }}
+                                    {% if profile.cv %}
+                                        <div class="mt-2">
+                                            <a href="{{ profile.cv.url }}" target="_blank">View Current CV</a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="fas fa-save"></i> Save Profile
+                            </button>
+                            <a href="{% url 'student_dashboard' %}" class="btn btn-secondary btn-lg px-5">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

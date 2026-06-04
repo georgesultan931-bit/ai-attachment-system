@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+.filter-btn{
+    border-radius:14px;
+}
+
+.candidate-card{
+    border:none;
+    border-radius:24px;
+    box-shadow:0 15px 35px rgba(15,23,42,.08);
+    transition:.25s;
+}
+
+.candidate-card:hover{
+    transform:translateY(-4px);
+}
+
+.score-circle{
+    width:80px;
+    height:80px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    font-size:20px;
+    color:white;
+}
+
+.score-high{
+    background:linear-gradient(135deg,#10b981,#22c55e);
+}
+
+.score-medium{
+    background:linear-gradient(135deg,#f59e0b,#f97316);
+}
+
+.score-low{
+    background:linear-gradient(135deg,#ef4444,#dc2626);
+}
+
+.skill-pill{
+    border-radius:50px;
+    padding:7px 12px;
+    font-size:12px;
+    font-weight:600;
+    display:inline-block;
+    margin:3px;
+}
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+    <div>
+        <h1 class="fw-bold mb-1">
+            Candidate Ranking Board
+        </h1>
+
+        <small class="text-muted">
+            AI-ranked applicants for your opportunities
+        </small>
+    </div>
+
+    <span class="badge bg-primary rounded-pill px-4 py-2">
+        {{ ranked_applications|length }} Candidates
+    </span>
+
+</div>
+
+<div class="mb-4 d-flex gap-2 flex-wrap">
+
+    <a class="btn filter-btn {% if not status_filter %}btn-dark{% else %}btn-outline-dark{% endif %}"
+       href="{% url 'employer_applications' %}">
+        All
+    </a>
+
+    <a class="btn filter-btn {% if status_filter == 'pending' %}btn-secondary{% else %}btn-outline-secondary{% endif %}"
+       href="{% url 'employer_applications' %}?status=pending">
+        Pending
+    </a>
+
+    <a class="btn filter-btn {% if status_filter == 'shortlisted' %}btn-warning{% else %}btn-outline-warning{% endif %}"
+       href="{% url 'employer_applications' %}?status=shortlisted">
+        Shortlisted
+    </a>
+
+    <a class="btn filter-btn {% if status_filter == 'interview_scheduled' %}btn-info{% else %}btn-outline-info{% endif %}"
+       href="{% url 'employer_applications' %}?status=interview_scheduled">
+        Interview
+    </a>
+
+    <a class="btn filter-btn {% if status_filter == 'accepted' %}btn-success{% else %}btn-outline-success{% endif %}"
+       href="{% url 'employer_applications' %}?status=accepted">
+        Accepted
+    </a>
+
+    <a class="btn filter-btn {% if status_filter == 'rejected' %}btn-danger{% else %}btn-outline-danger{% endif %}"
+       href="{% url 'employer_applications' %}?status=rejected">
+        Rejected
+    </a>
+
+</div>
+
+<div class="row g-4">
+
+{% for item in ranked_applications %}
+
+<div class="col-xl-6">
+
+    <div class="card candidate-card">
+
+        <div class="card-body p-4">
+
+            <div class="d-flex justify-content-between align-items-start mb-4">
+
+                <div>
+
+                    <span class="badge bg-dark mb-2">
+                        Rank #{{ forloop.counter }}
+                    </span>
+
+                    <h4 class="fw-bold mb-1">
+                        {{ item.application.student.full_name }}
+                    </h4>
+
+                    <p class="text-muted mb-1">
+                        {{ item.application.student.course }}
+                    </p>
+
+                    <small class="text-muted">
+                        {{ item.application.student.institution }}
+                    </small>
+
+                </div>
+
+                {% if item.score >= 80 %}
+                    <div class="score-circle score-high">
+                        {{ item.score }}%
+                    </div>
+                {% elif item.score >= 50 %}
+                    <div class="score-circle score-medium">
+                        {{ item.score }}%
+                    </div>
+                {% else %}
+                    <div class="score-circle score-low">
+                        {{ item.score }}%
+                    </div>
+                {% endif %}
+
+            </div>
+
+            <div class="mb-3">
+
+                <strong>Opportunity:</strong>
+                {{ item.application.opportunity.title }}
+
+            </div>
+
+            <div class="mb-3">
+
+                <strong>Status:</strong>
+
+                {% if item.application.status == 'accepted' %}
+                    <span class="badge bg-success">
+                        Accepted
+                    </span>
+                {% elif item.application.status == 'rejected' %}
+                    <span class="badge bg-danger">
+                        Rejected
+                    </span>
+                {% elif item.application.status == 'shortlisted' %}
+                    <span class="badge bg-warning text-dark">
+                        Shortlisted
+                    </span>
+                {% elif item.application.status == 'interview_scheduled' %}
+                    <span class="badge bg-info text-dark">
+                        Interview Scheduled
+                    </span>
+                {% else %}
+                    <span class="badge bg-secondary">
+                        Pending
+                    </span>
+                {% endif %}
+
+            </div>
+
+            <hr>
+
+            <div class="mb-3">
+
+                <strong>Matched Skills</strong>
+
+                <div class="mt-2">
+
+                    {% for skill in item.matched_skills %}
+                        <span class="skill-pill bg-success text-white">
+                            {{ skill }}
+                        </span>
+                    {% empty %}
+                        <span class="text-muted">
+                            No matched skills detected.
+                        </span>
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            <div class="mb-3">
+
+                <strong>Missing Skills</strong>
+
+                <div class="mt-2">
+
+                    {% for skill in item.missing_skills %}
+                        <span class="skill-pill bg-danger text-white">
+                            {{ skill }}
+                        </span>
+                    {% empty %}
+                        <span class="text-success">
+                            No major skill gaps detected.
+                        </span>
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            <div class="alert alert-light border mb-4">
+
+                {% if item.score >= 80 %}
+                    <strong>AI Recommendation:</strong>
+                    Strong candidate. Recommended for interview or direct shortlisting.
+                {% elif item.score >= 50 %}
+                    <strong>AI Recommendation:</strong>
+                    Moderate fit. Review profile and CV before decision.
+                {% else %}
+                    <strong>AI Recommendation:</strong>
+                    Weak fit. Candidate may need further skills alignment.
+                {% endif %}
+
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap">
+
+                <a class="btn btn-outline-dark"
+                   href="{% url 'application_detail' item.application.id %}">
+                    View Profile
+                </a>
+
+                <a class="btn btn-warning"
+                   href="{% url 'update_application_status' item.application.id 'shortlisted' %}">
+                    Shortlist
+                </a>
+
+                <a class="btn btn-info"
+                   href="{% url 'schedule_interview' item.application.id %}">
+                    Schedule Interview
+                </a>
+
+                <a class="btn btn-success"
+                   href="{% url 'update_application_status' item.application.id 'accepted' %}">
+                    Accept
+                </a>
+
+                <a class="btn btn-danger"
+                   href="{% url 'update_application_status' item.application.id 'rejected' %}">
+                    Reject
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% empty %}
+
+<div class="col-12">
+
+    <div class="alert alert-info">
+        No applications found.
+    </div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+{% endblock %}

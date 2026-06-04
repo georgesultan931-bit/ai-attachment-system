@@ -1,0 +1,531 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+.profile-hero{
+    background:linear-gradient(135deg,#0f172a,#2563eb);
+    color:white;
+    border-radius:30px;
+    padding:35px;
+    margin-bottom:30px;
+}
+
+.profile-card{
+    border:none;
+    border-radius:28px;
+    box-shadow:0 15px 35px rgba(15,23,42,.08);
+}
+
+.skill-badge{
+    padding:10px 16px;
+    border-radius:50px;
+    font-size:13px;
+    font-weight:600;
+    display:inline-block;
+    margin:4px;
+}
+
+.match-badge{
+    background:#dcfce7;
+    color:#166534;
+}
+
+.missing-badge{
+    background:#fee2e2;
+    color:#991b1b;
+}
+
+.avatar{
+    width:90px;
+    height:90px;
+    border-radius:50%;
+    object-fit:cover;
+    border:4px solid rgba(255,255,255,.3);
+}
+
+.info-label{
+    font-size:13px;
+    color:#64748b;
+    font-weight:700;
+    text-transform:uppercase;
+}
+
+.timeline-box{
+    border-left:4px solid #2563eb;
+    padding-left:18px;
+}
+</style>
+
+<div class="profile-hero">
+
+    <div class="row align-items-center">
+
+        <div class="col-md-8">
+
+            <div class="d-flex align-items-center gap-4">
+
+                {% if application.student.profile_picture %}
+                    <img src="{{ application.student.profile_picture.url }}"
+                         class="avatar">
+                {% else %}
+                    <div class="avatar d-flex align-items-center justify-content-center bg-white text-dark fw-bold">
+                        {{ application.student.full_name|slice:":1" }}
+                    </div>
+                {% endif %}
+
+                <div>
+
+                    <h2 class="fw-bold mb-1">
+                        {{ application.student.full_name }}
+                    </h2>
+
+                    <p class="mb-1 text-white-50">
+                        {{ application.student.course }}
+                    </p>
+
+                    <p class="mb-0 text-white-50">
+                        {{ application.student.institution }}
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4 text-md-end mt-4 mt-md-0">
+
+            <h1 class="fw-bold">
+                {{ score }}%
+            </h1>
+
+            <span class="badge bg-light text-dark">
+                AI Match Score
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="row g-4">
+
+    <div class="col-lg-8">
+
+        <div class="card profile-card mb-4">
+
+            <div class="card-body p-4">
+
+                <h4 class="fw-bold mb-4">
+                    Candidate Information
+                </h4>
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">Phone</div>
+                        <p>{{ application.student.phone_number }}</p>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">Location</div>
+                        <p>{{ application.student.location }}</p>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">Institution</div>
+                        <p>{{ application.student.institution }}</p>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">Course</div>
+                        <p>{{ application.student.course }}</p>
+                    </div>
+
+                    <div class="col-md-12">
+                        <div class="info-label">Bio</div>
+                        <p>{{ application.student.bio }}</p>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card profile-card mb-4">
+
+            <div class="card-body p-4">
+
+                <h4 class="fw-bold mb-4">
+                    Academic Qualifications
+                </h4>
+
+                {% for item in academic_qualifications %}
+
+                    <div class="timeline-box mb-4">
+
+                        <h5 class="fw-bold mb-1">
+                            {{ item.qualification }}
+                        </h5>
+
+                        <p class="mb-1">
+                            {{ item.institution_name }}
+                        </p>
+
+                        <p class="mb-1 text-muted">
+                            {{ item.course_name }}
+                        </p>
+
+                        <small class="text-muted">
+                            {{ item.start_year }} - {{ item.end_year }}
+                        </small>
+
+                        {% if item.grade %}
+                            <br>
+                            <span class="badge bg-success mt-2">
+                                Grade: {{ item.grade }}
+                            </span>
+                        {% endif %}
+
+                    </div>
+
+                {% empty %}
+
+                    <p class="text-muted">
+                        No academic qualifications added.
+                    </p>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+        <div class="card profile-card mb-4">
+
+            <div class="card-body p-4">
+
+                <h4 class="fw-bold mb-4">
+                    Work Experience
+                </h4>
+
+                {% for item in work_experiences %}
+
+                    <div class="timeline-box mb-4">
+
+                        <h5 class="fw-bold mb-1">
+                            {{ item.position }}
+                        </h5>
+
+                        <p class="mb-1">
+                            {{ item.organization }}
+                        </p>
+
+                        <small class="text-muted">
+                            {{ item.start_date }} - {{ item.end_date }}
+                        </small>
+
+                        {% if item.responsibilities %}
+                            <p class="mt-3 mb-0">
+                                {{ item.responsibilities }}
+                            </p>
+                        {% endif %}
+
+                    </div>
+
+                {% empty %}
+
+                    <p class="text-muted">
+                        No work experience added.
+                    </p>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+        <div class="card profile-card mb-4">
+
+            <div class="card-body p-4">
+
+                <h4 class="fw-bold mb-4">
+                    Matched Skills
+                </h4>
+
+                {% for skill in matched_skills %}
+
+                    <span class="skill-badge match-badge">
+                        {{ skill }}
+                    </span>
+
+                {% empty %}
+
+                    <p class="text-muted">
+                        No matched skills detected.
+                    </p>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+        <div class="card profile-card mb-4">
+
+            <div class="card-body p-4">
+
+                <h4 class="fw-bold mb-4">
+                    Missing Skills
+                </h4>
+
+                {% for skill in missing_skills %}
+
+                    <span class="skill-badge missing-badge">
+                        {{ skill }}
+                    </span>
+
+                {% empty %}
+
+                    <p class="text-success">
+                        No missing skills detected.
+                    </p>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+        <div class="card profile-card mb-4">
+
+            <div class="card-body p-4">
+
+                <h4 class="fw-bold mb-4">
+                    AI Analysis
+                </h4>
+
+                <ul>
+
+                    {% for explanation in explanations %}
+                        <li>{{ explanation }}</li>
+                    {% empty %}
+                        <li>No AI explanation available.</li>
+                    {% endfor %}
+
+                </ul>
+
+            </div>
+
+        </div>
+
+        <div class="card profile-card">
+
+            <div class="card-body p-4">
+
+                <h4 class="fw-bold mb-4">
+                    Referees
+                </h4>
+
+                {% for item in referees %}
+
+                    <div class="border rounded p-3 mb-3">
+
+                        <h5 class="fw-bold mb-1">
+                            {{ item.full_name }}
+                        </h5>
+
+                        <p class="mb-1">
+                            {{ item.position }}
+                        </p>
+
+                        <p class="mb-1">
+                            {{ item.organization }}
+                        </p>
+
+                        <p class="mb-1">
+                            {{ item.phone_number }}
+                        </p>
+
+                        <p class="mb-0">
+                            {{ item.email }}
+                        </p>
+
+                    </div>
+
+                {% empty %}
+
+                    <p class="text-muted">
+                        No referees added.
+                    </p>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-4">
+
+        <div class="card profile-card mb-4">
+
+            <div class="card-body p-4">
+
+                <h4 class="fw-bold mb-3">
+                    Candidate Assets
+                </h4>
+
+                {% if application.student.github %}
+                    <a href="{{ application.student.github }}"
+                       target="_blank"
+                       class="btn btn-dark w-100 mb-2">
+                        GitHub
+                    </a>
+                {% endif %}
+
+                {% if application.student.linkedin %}
+                    <a href="{{ application.student.linkedin }}"
+                       target="_blank"
+                       class="btn btn-primary w-100 mb-2">
+                        LinkedIn
+                    </a>
+                {% endif %}
+
+                {% if application.student.portfolio %}
+                    <a href="{{ application.student.portfolio }}"
+                       target="_blank"
+                       class="btn btn-success w-100 mb-2">
+                        Portfolio
+                    </a>
+                {% endif %}
+
+                {% if application.student.cv %}
+                    <a href="{{ application.student.cv.url }}"
+                       target="_blank"
+                       class="btn btn-outline-dark w-100">
+                        View CV
+                    </a>
+                    <a href="{% url 'generate_resume_pdf' %}"
+   target="_blank"
+   class="btn btn-danger w-100 mt-2">
+    Download Resume PDF
+</a>
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        <div class="card profile-card mb-4">
+
+            <div class="card-body p-4">
+
+                <h4 class="fw-bold mb-3">
+                    Application Status
+                </h4>
+
+                <p>
+                    <strong>Opportunity:</strong><br>
+                    {{ application.opportunity.title }}
+                </p>
+
+                <p>
+                    <strong>Status:</strong><br>
+
+                    {% if application.status == 'accepted' %}
+                        <span class="badge bg-success">Accepted</span>
+                    {% elif application.status == 'rejected' %}
+                        <span class="badge bg-danger">Rejected</span>
+                    {% elif application.status == 'shortlisted' %}
+                        <span class="badge bg-warning text-dark">Shortlisted</span>
+                    {% elif application.status == 'interview_scheduled' %}
+                        <span class="badge bg-info text-dark">Interview Scheduled</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Pending</span>
+                    {% endif %}
+                </p>
+
+                <p>
+                    <strong>Applied At:</strong><br>
+                    {{ application.applied_at }}
+                </p>
+
+            </div>
+
+        </div>
+
+        {% if application.interview_date %}
+
+        <div class="card profile-card mb-4">
+
+            <div class="card-body p-4">
+
+                <h4 class="fw-bold mb-3">
+                    Interview Details
+                </h4>
+
+                <p><strong>Date:</strong> {{ application.interview_date }}</p>
+                <p><strong>Time:</strong> {{ application.interview_time }}</p>
+                <p><strong>Venue:</strong> {{ application.interview_location }}</p>
+
+                <p>
+                    <strong>Student Response:</strong><br>
+
+                    {% if application.interview_response == 'accepted' %}
+                        <span class="badge bg-success">Accepted Interview</span>
+                    {% elif application.interview_response == 'declined' %}
+                        <span class="badge bg-danger">Declined Interview</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">Pending Response</span>
+                    {% endif %}
+                </p>
+
+                {% if application.interview_notes %}
+                    <p><strong>Notes:</strong> {{ application.interview_notes }}</p>
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+        <div class="d-grid gap-2">
+
+            <a class="btn btn-warning"
+               href="{% url 'update_application_status' application.id 'shortlisted' %}">
+                Shortlist
+            </a>
+
+            <a class="btn btn-primary"
+               href="{% url 'schedule_interview' application.id %}">
+                Schedule Interview
+            </a>
+
+            <a class="btn btn-success"
+               href="{% url 'update_application_status' application.id 'accepted' %}">
+                Accept
+            </a>
+
+            <a class="btn btn-danger"
+               href="{% url 'update_application_status' application.id 'rejected' %}">
+                Reject
+            </a>
+
+            <a class="btn btn-outline-dark"
+               href="{% url 'employer_applications' %}">
+                Back
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

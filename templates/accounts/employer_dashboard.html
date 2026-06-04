@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1 class="mb-4 fw-bold">
+    Employer Dashboard
+</h1>
+
+<div class="row g-4 mb-4">
+
+    <div class="col-md-4">
+        <div class="card shadow border-0 bg-primary text-white">
+            <div class="card-body">
+                <h5>Total Opportunities</h5>
+                <h1>{{ total_opportunities }}</h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow border-0 bg-success text-white">
+            <div class="card-body">
+                <h5>Open Opportunities</h5>
+                <h1>{{ open_opportunities }}</h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow border-0 bg-danger text-white">
+            <div class="card-body">
+                <h5>Closed Opportunities</h5>
+                <h1>{{ closed_opportunities }}</h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow border-0 bg-dark text-white">
+            <div class="card-body">
+                <h5>Total Applications</h5>
+                <h1>{{ total_applications }}</h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow border-0 bg-warning text-dark">
+            <div class="card-body">
+                <h5>Shortlisted</h5>
+                <h1>{{ shortlisted }}</h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow border-0 bg-info text-white">
+            <div class="card-body">
+                <h5>Accepted</h5>
+                <h1>{{ accepted }}</h1>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="card shadow border-0 mb-4">
+    <div class="card-body">
+        <h4 class="mb-3">Application Status Analytics</h4>
+        <canvas id="applicationStatusChart"></canvas>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <div class="col-md-6">
+        <div class="card shadow border-0">
+            <div class="card-body">
+                <h4>Post Opportunity</h4>
+                <p>Create new internship and attachment opportunities.</p>
+
+                <a class="btn btn-success"
+                   href="{% url 'create_opportunity' %}">
+                    Post Opportunity
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow border-0">
+            <div class="card-body">
+                <h4>Manage Applications</h4>
+                <p>Review, shortlist, accept, or reject student applicants.</p>
+
+                <a class="btn btn-primary"
+                   href="{% url 'employer_applications' %}">
+                    View Applications
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const ctx = document.getElementById('applicationStatusChart');
+
+new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Pending', 'Shortlisted', 'Accepted', 'Rejected'],
+        datasets: [{
+            label: 'Applications',
+            data: [
+                {{ pending }},
+                {{ shortlisted }},
+                {{ accepted }},
+                {{ rejected }}
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true
+    }
+});
+</script>
+
+{% endblock %}

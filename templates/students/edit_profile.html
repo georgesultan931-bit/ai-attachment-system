@@ -1,0 +1,455 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+
+.section-card{
+    border:none;
+    border-radius:24px;
+    box-shadow:0 12px 30px rgba(0,0,0,.08);
+    margin-bottom:25px;
+}
+
+.section-title{
+    background:linear-gradient(135deg,#0f172a,#2563eb);
+    color:white;
+    padding:15px 25px;
+    border-radius:24px 24px 0 0;
+    font-weight:700;
+}
+
+.profile-preview{
+    width:140px;
+    height:140px;
+    border-radius:50%;
+    object-fit:cover;
+    border:5px solid #2563eb;
+}
+
+</style>
+
+<h1 class="fw-bold mb-4">
+    Edit Student Profile
+</h1>
+
+<form method="POST"
+      enctype="multipart/form-data">
+
+    {% csrf_token %}
+
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <strong>Please correct the highlighted details.</strong>
+
+            <ul class="mb-0 mt-2">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <div class="card section-card">
+
+        <div class="section-title">
+            Profile Picture
+        </div>
+
+        <div class="card-body text-center">
+
+            {% if form.instance.profile_picture %}
+
+                <img src="{{ form.instance.profile_picture.url }}"
+                     class="profile-preview mb-3">
+
+            {% else %}
+
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+                     style="
+                     width:140px;
+                     height:140px;
+                     border-radius:50%;
+                     background:#e0ecff;
+                     color:#2563eb;
+                     font-size:50px;
+                     font-weight:800;">
+                    {{ form.instance.first_name|slice:":1" }}
+                </div>
+
+            {% endif %}
+
+            {{ form.profile_picture }}
+
+        </div>
+
+    </div>
+
+    <div class="card section-card">
+
+        <div class="section-title">
+            Personal Information
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-2 mb-3">
+                    <label>Salutation</label>
+                    {{ form.salutation }}
+                </div>
+
+                <div class="col-md-5 mb-3">
+                    <label>Surname</label>
+                    {{ form.surname }}
+                </div>
+
+                <div class="col-md-5 mb-3">
+                    <label>First Name</label>
+                    {{ form.first_name }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Other Names</label>
+                    {{ form.other_names }}
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label>ID Number</label>
+                    {{ form.id_number }}
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label>Huduma Number</label>
+                    {{ form.huduma_number }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>Date of Birth</label>
+                    {{ form.date_of_birth }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>Gender</label>
+                    {{ form.gender }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>KRA PIN</label>
+                    {{ form.kra_pin }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>Nationality</label>
+                    {{ form.nationality }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>Ethnicity</label>
+                    {{ form.ethnicity }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>Disability</label>
+                    {{ form.disability }}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card section-card">
+
+        <div class="section-title">
+            Address Information
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-3 mb-3">
+                    <label>County</label>
+                    {{ form.home_county }}
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label>Constituency</label>
+                    {{ form.home_constituency }}
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label>Sub County</label>
+                    {{ form.sub_county }}
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label>Ward</label>
+                    {{ form.home_ward }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>Postal Address</label>
+                    {{ form.postal_address }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>Postal Code</label>
+                    {{ form.postal_code }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>Town</label>
+                    {{ form.town }}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card section-card">
+
+        <div class="section-title">
+            Contact Information
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label>Phone Number</label>
+                    {{ form.phone_number }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Location</label>
+                    {{ form.location }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Alternative Contact</label>
+                    {{ form.alternative_contact_name }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Alternative Contact Phone</label>
+                    {{ form.alternative_contact_phone }}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card section-card">
+
+        <div class="section-title">
+            Academic Information
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label>Institution</label>
+                    {{ form.institution }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Course</label>
+                    {{ form.course }}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card section-card">
+
+        <div class="section-title">
+            Professional Information
+        </div>
+
+        <div class="card-body">
+
+            <label>Skills</label>
+            {{ form.skills }}
+
+            <br><br>
+
+            <label>Bio</label>
+            {{ form.bio }}
+
+        </div>
+
+    </div>
+
+    <div class="card section-card">
+
+        <div class="section-title">
+            Social Links
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-4 mb-3">
+                    <label>GitHub</label>
+                    {{ form.github }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>LinkedIn</label>
+                    {{ form.linkedin }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>Portfolio</label>
+                    {{ form.portfolio }}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card section-card">
+
+        <div class="section-title">
+            Documents
+        </div>
+
+        <div class="card-body">
+
+            <label>Upload CV</label>
+
+            {{ form.cv }}
+
+        </div>
+
+    </div>
+
+    <button class="btn btn-primary btn-lg">
+        Save Profile
+    </button>
+
+    <a href="{% url 'student_dashboard' %}"
+       class="btn btn-outline-secondary btn-lg ms-2">
+        Cancel
+    </a>
+
+</form>
+<datalist id="countyList"></datalist>
+<datalist id="constituencyList"></datalist>
+<datalist id="subCountyList"></datalist>
+<datalist id="wardList"></datalist>
+<datalist id="ethnicityList"></datalist>
+<datalist id="townList"></datalist>
+<datalist id="institutionList"></datalist>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const countyInput = document.getElementById("id_home_county");
+    const constituencyInput = document.getElementById("id_home_constituency");
+    const subCountyInput = document.getElementById("id_sub_county");
+    const wardInput = document.getElementById("id_home_ward");
+
+    const countyList = document.getElementById("countyList");
+    const constituencyList = document.getElementById("constituencyList");
+    const subCountyList = document.getElementById("subCountyList");
+    const wardList = document.getElementById("wardList");
+
+    const ethnicityList = document.getElementById("ethnicityList");
+    const townList = document.getElementById("townList");
+    const institutionList = document.getElementById("institutionList");
+
+    function fillList(listElement, items) {
+        listElement.innerHTML = "";
+
+        items.forEach(function (item) {
+            const option = document.createElement("option");
+            option.value = item;
+            listElement.appendChild(option);
+        });
+    }
+
+    fetch("/static/data/kenya_counties.json")
+        .then(response => response.json())
+        .then(data => {
+
+            fillList(
+                countyList,
+                data.map(item => item.county)
+            );
+
+            countyInput.addEventListener("input", function () {
+
+                const selectedCounty = data.find(
+                    item => item.county.toLowerCase() === countyInput.value.toLowerCase()
+                );
+
+                if (!selectedCounty) {
+                    constituencyList.innerHTML = "";
+                    subCountyList.innerHTML = "";
+                    wardList.innerHTML = "";
+                    return;
+                }
+
+                const constituencies = Object.keys(selectedCounty.constituencies || {});
+                fillList(constituencyList, constituencies);
+                fillList(subCountyList, selectedCounty.sub_counties || []);
+
+            });
+
+            constituencyInput.addEventListener("input", function () {
+
+                const selectedCounty = data.find(
+                    item => item.county.toLowerCase() === countyInput.value.toLowerCase()
+                );
+
+                if (!selectedCounty) {
+                    wardList.innerHTML = "";
+                    return;
+                }
+
+                const wards = selectedCounty.constituencies[constituencyInput.value] || [];
+                fillList(wardList, wards);
+
+            });
+
+        });
+
+    fetch("/static/data/kenya_ethnicities.json")
+        .then(response => response.json())
+        .then(data => fillList(ethnicityList, data));
+
+    fetch("/static/data/kenya_towns.json")
+        .then(response => response.json())
+        .then(data => fillList(townList, data));
+
+    fetch("/static/data/kenya_institutions.json")
+        .then(response => response.json())
+        .then(data => fillList(institutionList, data));
+
+});
+</script>
+
+{% endblock %}

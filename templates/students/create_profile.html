@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1 class="mb-4">Complete Student Profile</h1>
+
+<div class="card shadow border-0">
+
+    <div class="card-body">
+
+        <div class="text-center mb-4">
+            <img id="profilePicturePreview"
+                 class="rounded-circle d-none"
+                 style="width: 150px; height: 150px; object-fit: cover;"
+                 alt="Profile picture preview">
+
+            <div id="profilePicturePlaceholder"
+                 class="bg-secondary rounded-circle d-inline-flex align-items-center justify-content-center"
+                 style="width: 150px; height: 150px;">
+                <i class="bi bi-person-fill text-white"
+                   style="font-size: 4rem;"></i>
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+
+            {% csrf_token %}
+
+            {{ form.as_p }}
+
+            <button class="btn btn-primary" type="submit">
+                Save Profile
+            </button>
+
+        </form>
+
+    </div>
+
+</div><datalist id="countyList"></datalist>
+<datalist id="constituencyList"></datalist>
+<datalist id="subCountyList"></datalist>
+<datalist id="wardList"></datalist>
+<datalist id="ethnicityList"></datalist>
+<datalist id="townList"></datalist>
+<datalist id="institutionList"></datalist>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const profilePictureInput = document.getElementById("id_profile_picture");
+    const profilePicturePreview = document.getElementById("profilePicturePreview");
+    const profilePicturePlaceholder = document.getElementById("profilePicturePlaceholder");
+
+    const countyInput = document.getElementById("id_home_county");
+    const constituencyInput = document.getElementById("id_home_constituency");
+    const subCountyInput = document.getElementById("id_sub_county");
+    const wardInput = document.getElementById("id_home_ward");
+
+    const countyList = document.getElementById("countyList");
+    const constituencyList = document.getElementById("constituencyList");
+    const subCountyList = document.getElementById("subCountyList");
+    const wardList = document.getElementById("wardList");
+
+    const ethnicityList = document.getElementById("ethnicityList");
+    const townList = document.getElementById("townList");
+    const institutionList = document.getElementById("institutionList");
+
+    function fillList(listElement, items) {
+        listElement.innerHTML = "";
+
+        items.forEach(function (item) {
+            const option = document.createElement("option");
+            option.value = item;
+            listElement.appendChild(option);
+        });
+    }
+
+    if (profilePictureInput) {
+        profilePictureInput.addEventListener("change", function () {
+            const file = profilePictureInput.files[0];
+
+            if (!file) {
+                profilePicturePreview.classList.add("d-none");
+                profilePicturePlaceholder.classList.remove("d-none");
+                return;
+            }
+
+            profilePicturePreview.src = URL.createObjectURL(file);
+            profilePicturePreview.classList.remove("d-none");
+            profilePicturePlaceholder.classList.add("d-none");
+        });
+    }
+
+    fetch("/static/data/kenya_counties.json")
+        .then(response => response.json())
+        .then(data => {
+
+            fillList(
+                countyList,
+                data.map(item => item.county)
+            );
+
+            countyInput.addEventListener("input", function () {
+
+                const selectedCounty = data.find(
+                    item => item.county.toLowerCase() === countyInput.value.toLowerCase()
+                );
+
+                if (!selectedCounty) {
+                    constituencyList.innerHTML = "";
+                    subCountyList.innerHTML = "";
+                    wardList.innerHTML = "";
+                    return;
+                }
+
+                const constituencies = Object.keys(selectedCounty.constituencies || {});
+                fillList(constituencyList, constituencies);
+                fillList(subCountyList, selectedCounty.sub_counties || []);
+
+            });
+
+            constituencyInput.addEventListener("input", function () {
+
+                const selectedCounty = data.find(
+                    item => item.county.toLowerCase() === countyInput.value.toLowerCase()
+                );
+
+                if (!selectedCounty) {
+                    wardList.innerHTML = "";
+                    return;
+                }
+
+                const wards = selectedCounty.constituencies[constituencyInput.value] || [];
+                fillList(wardList, wards);
+
+            });
+
+        });
+
+    fetch("/static/data/kenya_ethnicities.json")
+        .then(response => response.json())
+        .then(data => fillList(ethnicityList, data));
+
+    fetch("/static/data/kenya_towns.json")
+        .then(response => response.json())
+        .then(data => fillList(townList, data));
+
+    fetch("/static/data/kenya_institutions.json")
+        .then(response => response.json())
+        .then(data => fillList(institutionList, data));
+
+});
+</script>
+
+{% endblock %}

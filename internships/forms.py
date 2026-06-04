@@ -1,0 +1,122 @@
+from django import forms
+
+from .models import (
+    InternshipOpportunity,
+    Application
+)
+
+
+class InternshipOpportunityForm(forms.ModelForm):
+
+    class Meta:
+
+        model = InternshipOpportunity
+
+        fields = [
+            'title',
+            'internship_type',
+            'description',
+            'required_skills',
+            'location',
+            'slots_available',
+            'deadline',
+            'status',
+        ]
+
+        widgets = {
+
+            'title': forms.TextInput(
+                attrs={'class': 'form-control'}
+            ),
+
+            'internship_type': forms.Select(
+                attrs={'class': 'form-control'}
+            ),
+
+            'description': forms.Textarea(
+                attrs={
+                    'class': 'form-control',
+                    'rows': 4
+                }
+            ),
+
+            'required_skills': forms.Textarea(
+                attrs={
+                    'class': 'form-control',
+                    'rows': 3,
+                    'placeholder': 'Example: Python, Django, Excel, Communication, Data analysis'
+                }
+            ),
+
+            'location': forms.TextInput(
+                attrs={'class': 'form-control'}
+            ),
+
+            'slots_available': forms.NumberInput(
+                attrs={'class': 'form-control'}
+            ),
+
+            'deadline': forms.DateInput(
+                attrs={
+                    'class': 'form-control',
+                    'type': 'date'
+                }
+            ),
+
+            'status': forms.Select(
+                attrs={'class': 'form-control'}
+            ),
+        }
+
+        help_texts = {
+            'required_skills': (
+                'Separate each required skill with a comma so students can see '
+                'which skills they meet and which ones are missing.'
+            ),
+        }
+
+
+class InterviewScheduleForm(forms.ModelForm):
+
+    class Meta:
+
+        model = Application
+
+        fields = [
+            'interview_date',
+            'interview_time',
+            'interview_location',
+            'interview_notes',
+        ]
+
+        widgets = {
+
+            'interview_date': forms.DateInput(
+                attrs={
+                    'class': 'form-control',
+                    'type': 'date'
+                }
+            ),
+
+            'interview_time': forms.TimeInput(
+                attrs={
+                    'class': 'form-control',
+                    'type': 'time'
+                }
+            ),
+
+            'interview_location': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Office Address or Google Meet Link'
+                }
+            ),
+
+            'interview_notes': forms.Textarea(
+                attrs={
+                    'class': 'form-control',
+                    'rows': 4,
+                    'placeholder': 'Additional instructions for candidate'
+                }
+            ),
+        }

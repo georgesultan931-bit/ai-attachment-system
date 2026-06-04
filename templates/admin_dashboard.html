@@ -1,0 +1,85 @@
+<h1>Admin Dashboard</h1>
+<p>Welcome, {{ request.user.username }}</p>
+<a href="{% url 'logout' %}">Logout</a>
+<div class="card premium-card mb-4">
+
+    <div class="card-body p-4">
+
+        <h4 class="fw-bold mb-3">
+            User Management
+        </h4>
+
+        <div class="table-responsive">
+
+            <table class="table table-hover align-middle">
+
+                <thead class="table-dark">
+                    <tr>
+                        <th>Username</th>
+                        <th>Name / Company</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Profile Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for item in all_users_data %}
+
+                        <tr>
+
+                            <td>{{ item.user.username }}</td>
+
+                            <td>{{ item.profile_name }}</td>
+
+                            <td>{{ item.user.email }}</td>
+
+                            <td>
+                                <span class="badge bg-primary">
+                                    {{ item.user.role|title }}
+                                </span>
+                            </td>
+
+                            <td>
+                                {% if item.profile_status == 'Exists' %}
+                                    <span class="badge bg-success">
+                                        Profile Exists
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger">
+                                        Profile Not Created
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <a href="{% url 'delete_user_account' item.user.id %}"
+                                   class="btn btn-danger btn-sm"
+                                   onclick="return confirm('Delete this user permanently?');">
+                                    Delete
+                                </a>
+                            </td>
+
+                        </tr>
+
+                    {% empty %}
+
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                No users found.
+                            </td>
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

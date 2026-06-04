@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1 class="mb-4">Post Internship / Attachment Opportunity</h1>
+
+<div class="card shadow border-0">
+    <div class="card-body">
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            {{ form.as_p }}
+
+            <button class="btn btn-primary" type="submit">
+                Publish Opportunity
+            </button>
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+
+    <div class="col-md-7">
+
+        <div class="card shadow border-0">
+
+            <div class="card-body p-5 text-center">
+
+                <i class="bi bi-hourglass-split text-warning"
+                   style="font-size:70px;"></i>
+
+                <h2 class="fw-bold mt-3">
+                    Registration Under Review
+                </h2>
+
+                <p class="text-muted">
+                    Your registration has been received. An admin will send your verification code, then you can enter it to access your dashboard.
+                </p>
+
+                <a href="{% url 'home' %}"
+                   class="btn btn-dark mt-3">
+                    Back to Home
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="card shadow border-0">
+
+    <div class="card-body p-4">
+
+        <h2 class="fw-bold mb-4">
+            {{ title|default:"Add Work Experience" }}
+        </h2>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {{ form.as_p }}
+
+            <button class="btn btn-primary">
+                {{ submit_label|default:"Save Experience" }}
+            </button>
+
+            <a href="{% url 'student_dashboard' %}"
+               class="btn btn-outline-dark">
+                Cancel
+            </a>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

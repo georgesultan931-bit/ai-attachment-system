@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1 class="mb-4 fw-bold">
+    {{ opportunity.title }}
+</h1>
+
+<div class="card shadow border-0">
+
+    <div class="card-body">
+
+        <div class="mb-4">
+
+            <div class="d-flex justify-content-between mb-2">
+
+                <strong>
+                    AI Match Score
+                </strong>
+
+                <span class="fw-bold">
+                    {{ score }}%
+                </span>
+
+            </div>
+
+            <div class="progress"
+                 style="height: 12px;">
+
+                {% if score >= 70 %}
+
+                    <div class="progress-bar bg-success"
+                         style="width: {{ score }}%;">
+                    </div>
+
+                {% elif score >= 40 %}
+
+                    <div class="progress-bar bg-warning"
+                         style="width: {{ score }}%;">
+                    </div>
+
+                {% else %}
+
+                    <div class="progress-bar bg-danger"
+                         style="width: {{ score }}%;">
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        <div class="row g-4 mb-4">
+
+            <div class="col-md-6">
+
+                <div class="card border-0 bg-light h-100">
+
+                    <div class="card-body">
+
+                        <h5 class="fw-bold text-success mb-3">
+                            Skills You Meet
+                        </h5>
+
+                        {% if matched_skills %}
+
+                            <div class="d-flex flex-wrap gap-2">
+
+                                {% for skill in matched_skills %}
+
+                                    <span class="badge bg-success">
+                                        {{ skill }}
+                                    </span>
+
+                                {% endfor %}
+
+                            </div>
+
+                        {% else %}
+
+                            <p class="text-muted">
+                                No matching skills detected.
+                            </p>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <div class="card border-0 bg-light h-100">
+
+                    <div class="card-body">
+
+                        <h5 class="fw-bold text-danger mb-3">
+                            Skills Still Missing
+                        </h5>
+
+                        {% if missing_skills %}
+
+                            <div class="d-flex flex-wrap gap-2">
+
+                                {% for skill in missing_skills %}
+
+                                    <span class="badge bg-danger">
+                                        {{ skill }}
+                                    </span>
+
+                                {% endfor %}
+
+                            </div>
+
+                        {% else %}
+
+                            <p class="text-success">
+                                Excellent skill alignment.
+                            </p>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card border-0 bg-light mb-4">
+
+            <div class="card-body">
+
+                <h5 class="fw-bold mb-3">
+                    AI Strength Analysis
+                </h5>
+
+                <ul class="mb-0">
+
+                    {% for strength in strengths %}
+
+                        <li class="mb-2">
+                            {{ strength }}
+                        </li>
+
+                    {% empty %}
+
+                        <li class="text-muted">
+                            No strengths detected.
+                        </li>
+
+                    {% endfor %}
+
+                </ul>
+
+            </div>
+
+        </div>
+
+        <div class="card border-0 bg-light mb-4">
+
+            <div class="card-body">
+
+                <h5 class="fw-bold mb-3">
+                    AI Explanation
+                </h5>
+
+                <ul class="mb-0">
+
+                    {% for explanation in explanations %}
+
+                        <li class="mb-2">
+                            {{ explanation }}
+                        </li>
+
+                    {% empty %}
+
+                        <li class="text-muted">
+                            No AI explanations available.
+                        </li>
+
+                    {% endfor %}
+
+                </ul>
+
+            </div>
+
+        </div>
+
+        <hr>
+
+        <p>
+            <strong>Company:</strong>
+            {{ opportunity.employer.company_name }}
+        </p>
+
+        <p>
+            <strong>Type:</strong>
+            {{ opportunity.get_internship_type_display }}
+        </p>
+
+        <p>
+            <strong>Location:</strong>
+            {{ opportunity.location }}
+        </p>
+
+        <p>
+            <strong>Slots:</strong>
+            {{ opportunity.slots_available }}
+        </p>
+
+        <p>
+            <strong>Deadline:</strong>
+            {{ opportunity.deadline }}
+        </p>
+
+        <p>
+            <strong>Status:</strong>
+            {{ opportunity.status }}
+        </p>
+
+        <hr>
+
+        <h4 class="fw-bold">
+            Description
+        </h4>
+
+        <p>
+            {{ opportunity.description }}
+        </p>
+
+        <h4 class="fw-bold">
+            Employer Required Skills
+        </h4>
+
+        <p>
+            {{ opportunity.required_skills }}
+        </p>
+
+        {% if already_applied %}
+
+            <button class="btn btn-secondary" disabled>
+                Already Applied
+            </button>
+
+            <small class="text-muted d-block mt-1">
+
+                You have already submitted an application
+                for this opportunity.
+
+            </small>
+
+        {% else %}
+
+            <a class="btn btn-primary"
+               href="{% url 'apply_opportunity' opportunity.id %}">
+
+                Apply Now
+
+            </a>
+
+        {% endif %}
+
+        <a class="btn btn-outline-dark"
+           href="{% url 'opportunity_list' %}">
+
+            Back to Opportunities
+
+        </a>
+
+    </div>
+
+</div>
+
+{% endblock %}

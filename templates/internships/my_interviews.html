@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+.interview-hero{
+    background:linear-gradient(135deg,#0f172a,#2563eb);
+    color:white;
+    border-radius:30px;
+    padding:35px;
+    margin-bottom:30px;
+}
+
+.interview-card{
+    border:none;
+    border-radius:26px;
+    box-shadow:0 15px 35px rgba(15,23,42,.08);
+}
+
+.status-pill{
+    border-radius:50px;
+    padding:8px 14px;
+    font-weight:700;
+}
+</style>
+
+<div class="interview-hero">
+
+    <h1 class="fw-bold mb-2">
+        My Interviews
+    </h1>
+
+    <p class="text-white-50 mb-0">
+        View scheduled interviews and respond to employer invitations.
+    </p>
+
+</div>
+
+{% for interview in interviews %}
+
+<div class="card interview-card mb-4">
+
+    <div class="card-body p-4">
+
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+
+            <div>
+
+                <h4 class="fw-bold mb-2">
+                    {{ interview.opportunity.title }}
+                </h4>
+
+                <p class="mb-1">
+                    <strong>Company:</strong>
+                    {{ interview.opportunity.employer.company_name }}
+                </p>
+
+                <p class="mb-1">
+                    <strong>Date:</strong>
+                    {{ interview.interview_date }}
+                </p>
+
+                <p class="mb-1">
+                    <strong>Time:</strong>
+                    {{ interview.interview_time }}
+                </p>
+
+                <p class="mb-1">
+                    <strong>Location / Link:</strong>
+                    {{ interview.interview_location }}
+                </p>
+
+                {% if interview.interview_notes %}
+                    <p class="mb-1">
+                        <strong>Notes:</strong>
+                        {{ interview.interview_notes }}
+                    </p>
+                {% endif %}
+
+            </div>
+
+            <div class="text-end">
+
+                {% if interview.interview_response == 'accepted' %}
+
+                    <span class="badge bg-success status-pill">
+                        Accepted
+                    </span>
+
+                {% elif interview.interview_response == 'declined' %}
+
+                    <span class="badge bg-danger status-pill">
+                        Declined
+                    </span>
+
+                {% else %}
+
+                    <span class="badge bg-warning text-dark status-pill">
+                        Pending Response
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        <hr>
+
+        <div class="d-flex gap-2 flex-wrap">
+
+            {% if interview.interview_response == 'pending' or not interview.interview_response %}
+
+                <a href="{% url 'accept_interview' interview.id %}"
+                   class="btn btn-success">
+                    Accept Interview
+                </a>
+
+                <a href="{% url 'decline_interview' interview.id %}"
+                   class="btn btn-danger">
+                    Decline Interview
+                </a>
+
+            {% elif interview.interview_response == 'accepted' %}
+
+                <button class="btn btn-success" disabled>
+                    Interview Accepted
+                </button>
+
+            {% elif interview.interview_response == 'declined' %}
+
+                <button class="btn btn-danger" disabled>
+                    Interview Declined
+                </button>
+
+            {% endif %}
+
+            <a href="{% url 'my_applications' %}"
+               class="btn btn-outline-dark">
+                View My Applications
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% empty %}
+
+<div class="alert alert-info">
+    No interviews scheduled yet.
+</div>
+
+{% endfor %}
+
+{% endblock %}

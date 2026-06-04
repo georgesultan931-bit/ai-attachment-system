@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+.company-hero{
+    background:linear-gradient(135deg,#0f172a,#2563eb);
+    color:white;
+    border-radius:30px;
+    padding:35px;
+    margin-bottom:30px;
+}
+
+.company-logo-large{
+    width:110px;
+    height:110px;
+    border-radius:24px;
+    object-fit:cover;
+    border:4px solid white;
+}
+
+.company-card{
+    border:none;
+    border-radius:28px;
+    box-shadow:0 15px 35px rgba(15,23,42,.08);
+}
+</style>
+
+<div class="company-hero">
+
+    <div class="d-flex align-items-center gap-4 flex-wrap">
+
+        {% if employer.logo %}
+            <img src="{{ employer.logo.url }}"
+                 class="company-logo-large">
+        {% else %}
+            <div class="company-logo-large bg-white text-dark d-flex align-items-center justify-content-center">
+                <i class="bi bi-building fs-1"></i>
+            </div>
+        {% endif %}
+
+        <div>
+            <h1 class="fw-bold mb-1">
+                {{ employer.company_name }}
+            </h1>
+
+            <p class="text-white-50 mb-1">
+                {{ employer.industry }}
+            </p>
+
+            <p class="mb-0">
+                {{ employer.company_location }}
+            </p>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="row g-4 mb-4">
+
+    <div class="col-lg-8">
+
+        <div class="card company-card h-100">
+
+            <div class="card-body p-4">
+
+                <h4 class="fw-bold mb-3">
+                    About Company
+                </h4>
+
+                <p>
+                    {{ employer.company_description }}
+                </p>
+
+                {% if employer.website %}
+                    <a href="{{ employer.website }}"
+                       target="_blank"
+                       class="btn btn-dark">
+                        Visit Website
+                    </a>
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-4">
+
+        <div class="card company-card h-100">
+
+            <div class="card-body p-4">
+
+                <h4 class="fw-bold mb-3">
+                    Company Details
+                </h4>
+
+                <p>
+                    <strong>Email:</strong><br>
+                    {{ employer.company_email }}
+                </p>
+
+                <p>
+                    <strong>Phone:</strong><br>
+                    {{ employer.company_phone }}
+                </p>
+
+                <p>
+                    <strong>Location:</strong><br>
+                    {{ employer.company_location }}
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card company-card">
+
+    <div class="card-body p-4">
+
+        <h4 class="fw-bold mb-4">
+            Open Opportunities
+        </h4>
+
+        <div class="row g-4">
+
+            {% for opportunity in opportunities %}
+
+                <div class="col-md-6">
+
+                    <div class="card border-0 bg-light h-100">
+
+                        <div class="card-body">
+
+                            <h5 class="fw-bold">
+                                {{ opportunity.title }}
+                            </h5>
+
+                            <p class="text-muted">
+                                {{ opportunity.location }}
+                            </p>
+
+                            <p>
+                                {{ opportunity.description|truncatewords:25 }}
+                            </p>
+
+                            <a class="btn btn-primary"
+                               href="{% url 'opportunity_detail' opportunity.id %}">
+                                View Opportunity
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% empty %}
+
+                <p class="text-muted">
+                    No open opportunities from this company.
+                </p>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

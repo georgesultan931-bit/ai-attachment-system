@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+.logo-preview{
+    width:140px;
+    height:140px;
+    border-radius:24px;
+    object-fit:cover;
+    border:5px solid #2563eb;
+    box-shadow:0 10px 25px rgba(37,99,235,.25);
+}
+
+.profile-card{
+    border:none;
+    border-radius:28px;
+    box-shadow:0 15px 35px rgba(15,23,42,.08);
+}
+</style>
+
+<h1 class="mb-4 fw-bold">
+    Edit Employer Profile
+</h1>
+
+<div class="card profile-card">
+
+    <div class="card-body p-4">
+
+        <form method="post"
+              enctype="multipart/form-data">
+
+            {% csrf_token %}
+
+            <div class="text-center mb-5">
+
+                {% if form.instance.logo %}
+
+                    <img src="{{ form.instance.logo.url }}"
+                         class="logo-preview mb-3"
+                         id="logoPreview">
+
+                {% else %}
+
+                    <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+                         id="logoPlaceholder"
+                         style="
+                         width:140px;
+                         height:140px;
+                         border-radius:24px;
+                         background:#e0ecff;
+                         color:#2563eb;
+                         font-size:50px;
+                         border:5px solid #2563eb;
+                         ">
+                        <i class="bi bi-building"></i>
+                    </div>
+
+                    <img id="logoPreview"
+                         class="logo-preview mb-3"
+                         style="display:none;">
+
+                {% endif %}
+
+                <h5 class="fw-bold">
+                    Company Logo
+                </h5>
+
+                <input type="file"
+                       name="logo"
+                       class="form-control"
+                       id="logoInput"
+                       accept="image/*">
+
+                <small class="text-muted d-block mt-2">
+                    Upload PNG or JPG company logo.
+                </small>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        Company Name
+                    </label>
+                    {{ form.company_name }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        Company Email
+                    </label>
+                    {{ form.company_email }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        Company Phone
+                    </label>
+                    {{ form.company_phone }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        Company Location
+                    </label>
+                    {{ form.company_location }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        Industry
+                    </label>
+                    {{ form.industry }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        Website
+                    </label>
+                    {{ form.website }}
+                </div>
+
+                <div class="col-md-12 mb-4">
+                    <label class="form-label">
+                        Company Description
+                    </label>
+                    {{ form.company_description }}
+                </div>
+
+            </div>
+
+            <div class="d-flex gap-2">
+
+                <button class="btn btn-success"
+                        type="submit">
+                    Update Profile
+                </button>
+
+                <a href="{% url 'employer_profile' %}"
+                   class="btn btn-outline-dark">
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+
+document
+.getElementById('logoInput')
+.addEventListener('change', function(event){
+
+    const file = event.target.files[0];
+
+    if(file){
+
+        const reader = new FileReader();
+
+        reader.onload = function(e){
+
+            const preview =
+            document.getElementById('logoPreview');
+
+            preview.src = e.target.result;
+
+            preview.style.display = 'block';
+
+            const placeholder =
+            document.getElementById('logoPlaceholder');
+
+            if(placeholder){
+                placeholder.style.display = 'none';
+            }
+
+        };
+
+        reader.readAsDataURL(file);
+
+    }
+
+});
+
+</script>
+
+{% endblock %}

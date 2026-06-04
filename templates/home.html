@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+.home-hero {
+    min-height: 64vh;
+    border-radius: 8px;
+    padding: clamp(32px, 6vw, 72px);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    background:
+        linear-gradient(90deg, rgba(15, 23, 42, .92), rgba(15, 23, 42, .72), rgba(15, 23, 42, .18)),
+        url("{% static 'images/home-platform-hero.png' %}");
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+}
+
+.home-hero-copy {
+    max-width: 700px;
+}
+
+.home-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, .14);
+    border: 1px solid rgba(255, 255, 255, .25);
+    border-radius: 999px;
+    padding: 9px 14px;
+    font-weight: 700;
+    margin-bottom: 22px;
+}
+
+.home-hero h1 {
+    font-size: clamp(2.35rem, 5vw, 4.6rem);
+    line-height: 1.03;
+    letter-spacing: 0;
+    margin-bottom: 20px;
+}
+
+.home-hero p {
+    font-size: 1.12rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, .84);
+    max-width: 650px;
+}
+
+.home-stat,
+.home-feature,
+.home-flow {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    box-shadow: 0 14px 32px rgba(15, 23, 42, .07);
+}
+
+.home-stat {
+    padding: 22px;
+}
+
+.home-stat .icon-box,
+.home-feature .icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    margin-bottom: 14px;
+}
+
+.icon-teal { background: #0f766e; }
+.icon-blue { background: #2563eb; }
+.icon-amber { background: #d97706; }
+.icon-coral { background: #dc2626; }
+
+.home-feature {
+    padding: 28px;
+    height: 100%;
+}
+
+.home-flow {
+    padding: 28px;
+}
+
+.flow-step {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.flow-step:last-child {
+    border-bottom: 0;
+}
+
+.flow-number {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ecfeff;
+    color: #0f766e;
+    font-weight: 800;
+    flex: 0 0 auto;
+}
+
+body.dark-mode .home-stat,
+body.dark-mode .home-feature,
+body.dark-mode .home-flow {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+body.dark-mode .flow-step {
+    border-color: #334155;
+}
+
+@media (max-width: 768px) {
+    .home-hero {
+        min-height: 560px;
+        background:
+            linear-gradient(180deg, rgba(15, 23, 42, .94), rgba(15, 23, 42, .78)),
+            url("{% static 'images/home-platform-hero.png' %}");
+        background-size: cover;
+        background-position: center;
+    }
+}
+</style>
+
+<section class="home-hero mb-4">
+    <div class="home-hero-copy">
+        <div class="home-eyebrow">
+            <i class="bi bi-stars"></i>
+            AI-powered placement workflow
+        </div>
+
+        <h1 class="fw-bold">
+            AI Internship & Attachment System
+        </h1>
+
+        <p class="mb-4">
+            A complete platform for verified student registration, employer opportunities,
+            skill-based matching, interview scheduling, approvals and placement analytics.
+        </p>
+
+        <div class="d-flex gap-3 flex-wrap">
+            <a href="{% url 'student_register' %}"
+               class="btn btn-light btn-lg px-4">
+                <i class="bi bi-mortarboard me-1"></i>
+                Student Register
+            </a>
+
+            <a href="{% url 'employer_register' %}"
+               class="btn btn-outline-light btn-lg px-4">
+                <i class="bi bi-building me-1"></i>
+                Employer Register
+            </a>
+
+            <a href="{% url 'login' %}"
+               class="btn btn-warning btn-lg px-4">
+                <i class="bi bi-box-arrow-in-right me-1"></i>
+                Login
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="home-stat h-100">
+            <div class="icon-box icon-teal">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <h2 class="fw-bold mb-1">{{ total_students }}</h2>
+            <p class="text-muted mb-0">Student profiles</p>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="home-stat h-100">
+            <div class="icon-box icon-blue">
+                <i class="bi bi-building-fill"></i>
+            </div>
+            <h2 class="fw-bold mb-1">{{ total_employers }}</h2>
+            <p class="text-muted mb-0">Employer partners</p>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="home-stat h-100">
+            <div class="icon-box icon-amber">
+                <i class="bi bi-briefcase-fill"></i>
+            </div>
+            <h2 class="fw-bold mb-1">{{ total_opportunities }}</h2>
+            <p class="text-muted mb-0">Opportunities posted</p>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="home-stat h-100">
+            <div class="icon-box icon-coral">
+                <i class="bi bi-file-earmark-check-fill"></i>
+            </div>
+            <h2 class="fw-bold mb-1">{{ total_applications }}</h2>
+            <p class="text-muted mb-0">Applications tracked</p>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4 mb-4">
+    <div class="col-lg-4">
+        <div class="home-feature">
+            <div class="icon-box icon-teal">
+                <i class="bi bi-bullseye"></i>
+            </div>
+            <h4 class="fw-bold">Skill-Based Matching</h4>
+            <p class="text-muted mb-0">
+                Students see what they meet and what they still need against each employer requirement.
+            </p>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="home-feature">
+            <div class="icon-box icon-blue">
+                <i class="bi bi-shield-check"></i>
+            </div>
+            <h4 class="fw-bold">Admin Verification</h4>
+            <p class="text-muted mb-0">
+                New registrations stay controlled until an admin sends and approves a verification code.
+            </p>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="home-feature">
+            <div class="icon-box icon-amber">
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+            <h4 class="fw-bold">Placement Analytics</h4>
+            <p class="text-muted mb-0">
+                Dashboards show applications, interviews, approvals and high-demand skills at a glance.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="home-flow mb-4">
+    <div class="row g-4 align-items-center">
+        <div class="col-lg-5">
+            <h2 class="fw-bold mb-3">A cleaner workflow from registration to placement</h2>
+            <p class="text-muted mb-0">
+                The system keeps each role focused: students complete profiles, employers post requirements,
+                admins verify accounts and everyone receives their own notifications.
+            </p>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="flow-step">
+                <span class="flow-number">1</span>
+                <div>
+                    <strong>Register and verify</strong>
+                    <div class="text-muted small">Admin sends the code, then the user enters the dashboard.</div>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <span class="flow-number">2</span>
+                <div>
+                    <strong>Complete profile and skills</strong>
+                    <div class="text-muted small">Students add documents, details and a profile photo.</div>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <span class="flow-number">3</span>
+                <div>
+                    <strong>Match and apply</strong>
+                    <div class="text-muted small">Opportunities show matched and missing skills clearly.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
