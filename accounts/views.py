@@ -435,7 +435,7 @@ def student_register(request):
 
                 messages.error(
                     request,
-                    'An account with this email already exists.'
+                    'This email is already registered to an active or verified account. Please log in or use another email.'
                 )
 
     else:
@@ -479,7 +479,7 @@ def employer_register(request):
 
                 messages.error(
                     request,
-                    'An account with this email already exists.'
+                    'This email is already registered to an active or verified account. Please log in or use another email.'
                 )
 
     else:

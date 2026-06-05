@@ -4,6 +4,71 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from .models import User
 
 
+def can_replace_pending_user(user):
+
+    return (
+        user.role in [
+            'student',
+            'employer'
+        ]
+        and not user.is_email_verified
+        and not user.is_approved
+    )
+
+
+class ReplacePendingAccountMixin:
+
+    def clean(self):
+
+        cleaned_data = super().clean()
+
+        self.replace_pending_conflict(
+            cleaned_data,
+            'email',
+            'email__iexact'
+        )
+
+        self.replace_pending_conflict(
+            cleaned_data,
+            'username',
+            'username__iexact'
+        )
+
+        return cleaned_data
+
+    def replace_pending_conflict(self, cleaned_data, field_name, lookup):
+
+        value = cleaned_data.get(field_name)
+
+        if not value:
+            return
+
+        existing_user = User.objects.filter(
+            **{
+                lookup: value
+            }
+        ).first()
+
+        if existing_user is None:
+            return
+
+        if can_replace_pending_user(existing_user):
+            existing_user.delete()
+            return
+
+        if field_name == 'email':
+            self.add_error(
+                field_name,
+                'This email is already registered to an active or verified account. Please log in or use another email.'
+            )
+
+        if field_name == 'username':
+            self.add_error(
+                field_name,
+                'This username is already registered to an active or verified account. Please choose another username.'
+            )
+
+
 class CustomLoginForm(AuthenticationForm):
 
     username = forms.CharField(
@@ -24,7 +89,7 @@ class CustomLoginForm(AuthenticationForm):
         )
     )
 
-class StudentRegistrationForm(UserCreationForm):
+class StudentRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
 
     email = forms.EmailField(
         required=True,
@@ -79,13 +144,7 @@ class StudentRegistrationForm(UserCreationForm):
 
     def clean_email(self):
 
-        email = self.cleaned_data.get('email')
-
-        if User.objects.filter(email=email).exists():
-
-            raise forms.ValidationError(
-                'An account with this email already exists.'
-            )
+        email = self.cleaned_data.get('email', '').strip().lower()
 
         return email
 
@@ -106,7 +165,7 @@ class StudentRegistrationForm(UserCreationForm):
 
         return user
 
-class EmployerRegistrationForm(UserCreationForm):
+class EmployerRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
 
     email = forms.EmailField(
         required=True,
@@ -161,13 +220,7 @@ class EmployerRegistrationForm(UserCreationForm):
 
     def clean_email(self):
 
-        email = self.cleaned_data.get('email')
-
-        if User.objects.filter(email=email).exists():
-
-            raise forms.ValidationError(
-                'An account with this email already exists.'
-            )
+        email = self.cleaned_data.get('email', '').strip().lower()
 
         return email
 
