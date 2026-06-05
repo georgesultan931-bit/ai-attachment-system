@@ -201,7 +201,7 @@ class RegistrationNotificationTests(TestCase):
 
         self.assertRedirects(
             response,
-            reverse('dashboard'),
+            reverse('create_student_profile'),
             fetch_redirect_response=False
         )
 
@@ -262,7 +262,40 @@ class RegistrationNotificationTests(TestCase):
 
         self.assertRedirects(
             response,
-            reverse('dashboard'),
+            reverse('create_student_profile'),
+            fetch_redirect_response=False
+        )
+
+    def test_unverified_inactive_user_login_redirects_to_otp(self):
+
+        user = User.objects.create_user(
+            username='python',
+            email='python-user@example.com',
+            password='Testpass12345',
+            role='student',
+            phone_number='0712345678',
+            is_active=False,
+            is_approved=False,
+            is_email_verified=False
+        )
+        user.generate_otp()
+
+        response = self.client.post(
+            reverse('login'),
+            {
+                'username': ' Python ',
+                'password': ' Testpass12345 ',
+            }
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                'verify_otp',
+                args=[
+                    user.id
+                ]
+            ),
             fetch_redirect_response=False
         )
 
