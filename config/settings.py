@@ -50,6 +50,21 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '3600'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get(
+        'SECURE_HSTS_INCLUDE_SUBDOMAINS',
+        'False'
+    ).lower() == 'true'
+    SECURE_HSTS_PRELOAD = os.environ.get(
+        'SECURE_HSTS_PRELOAD',
+        'False'
+    ).lower() == 'true'
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
