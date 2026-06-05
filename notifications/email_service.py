@@ -1,3 +1,6 @@
+import os
+from types import SimpleNamespace
+
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.utils.html import strip_tags
 
@@ -9,9 +12,44 @@ from .models import (
 
 def get_active_email_config():
 
-    return EmailConfiguration.objects.filter(
+    config = EmailConfiguration.objects.filter(
         is_active=True
     ).first()
+
+    if config is not None:
+
+        return config
+
+    email_host = os.environ.get('EMAIL_HOST', '').strip()
+    email_host_user = os.environ.get('EMAIL_HOST_USER', '').strip()
+    email_host_password = os.environ.get('EMAIL_HOST_PASSWORD', '').strip()
+
+    if not all([
+        email_host,
+        email_host_user,
+        email_host_password,
+    ]):
+
+        return None
+
+    return SimpleNamespace(
+        email_host=email_host,
+        email_port=int(os.environ.get('EMAIL_PORT', '587')),
+        email_use_tls=os.environ.get(
+            'EMAIL_USE_TLS',
+            'True'
+        ).lower() == 'true',
+        email_host_user=email_host_user,
+        email_host_password=email_host_password,
+        default_from_email=os.environ.get(
+            'DEFAULT_FROM_EMAIL',
+            email_host_user
+        ),
+        admin_notification_email=os.environ.get(
+            'ADMIN_NOTIFICATION_EMAIL',
+            email_host_user
+        ),
+    )
 
 
 def build_html_email(

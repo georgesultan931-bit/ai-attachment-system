@@ -1,9 +1,12 @@
+from unittest.mock import patch
+
 from django.test import TestCase
 from django.test import RequestFactory
 from django.test import override_settings
 from django.urls import reverse
 
 from notifications.models import Notification
+from notifications.email_service import get_active_email_config
 
 from .models import User
 from .views import (
@@ -200,6 +203,36 @@ class RegistrationNotificationTests(TestCase):
             response,
             reverse('dashboard'),
             fetch_redirect_response=False
+        )
+
+    def test_email_config_can_fall_back_to_environment(self):
+
+        with patch.dict(
+            'os.environ',
+            {
+                'EMAIL_HOST': 'smtp.gmail.com',
+                'EMAIL_PORT': '587',
+                'EMAIL_USE_TLS': 'True',
+                'EMAIL_HOST_USER': 'sender@example.com',
+                'EMAIL_HOST_PASSWORD': 'app-password',
+                'DEFAULT_FROM_EMAIL': 'sender@example.com',
+                'ADMIN_NOTIFICATION_EMAIL': 'admin@example.com',
+            }
+        ):
+
+            config = get_active_email_config()
+
+        self.assertEqual(
+            config.email_host,
+            'smtp.gmail.com'
+        )
+        self.assertEqual(
+            config.email_host_user,
+            'sender@example.com'
+        )
+        self.assertEqual(
+            config.admin_notification_email,
+            'admin@example.com'
         )
 
     def test_otp_verification_waits_for_admin_approval(self):
