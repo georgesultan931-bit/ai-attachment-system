@@ -50,6 +50,11 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 
+PUBLIC_SITE_URL = os.environ.get(
+    'PUBLIC_SITE_URL',
+    ''
+).rstrip('/')
+
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = True

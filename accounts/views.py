@@ -1,6 +1,7 @@
 from collections import Counter
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
@@ -228,12 +229,22 @@ def dashboard(request):
 
 def build_absolute_url(request, view_name, *args):
 
-    return request.build_absolute_uri(
-        reverse(
-            view_name,
-            args=args
-        )
+    path = reverse(
+        view_name,
+        args=args
     )
+
+    public_site_url = getattr(
+        settings,
+        'PUBLIC_SITE_URL',
+        ''
+    ).rstrip('/')
+
+    if public_site_url:
+
+        return f'{public_site_url}{path}'
+
+    return request.build_absolute_uri(path)
 
 
 def send_otp_email(request, user):
