@@ -247,6 +247,17 @@ def build_absolute_url(request, view_name, *args):
     return request.build_absolute_uri(path)
 
 
+def build_public_url(path):
+
+    public_site_url = getattr(
+        settings,
+        'PUBLIC_SITE_URL',
+        'https://ai-attachment-system.onrender.com'
+    ).rstrip('/')
+
+    return f'{public_site_url}{path}'
+
+
 def send_otp_email(request, user):
 
     otp = user.generate_otp()
@@ -264,10 +275,13 @@ def send_otp_email(request, user):
             user.email
         ],
         button_text='Verify Email',
-        button_url=build_absolute_url(
-            request,
-            'verify_otp',
-            user.id
+        button_url=build_public_url(
+            reverse(
+                'verify_otp',
+                args=[
+                    user.id
+                ]
+            )
         )
     )
 
@@ -349,27 +363,6 @@ def notify_admin_new_registration(request, user):
             'Dashboard notification created. No active email configuration found for email alert.'
         )
 
-    email_code_url = build_absolute_url(
-        request,
-        'send_user_verification_code_channel',
-        user.id,
-        'email'
-    )
-
-    whatsapp_code_url = build_absolute_url(
-        request,
-        'send_user_verification_code_channel',
-        user.id,
-        'whatsapp'
-    )
-
-    sms_code_url = build_absolute_url(
-        request,
-        'send_user_verification_code_channel',
-        user.id,
-        'sms'
-    )
-
     return send_system_email(
         subject=f'New {role_label} Registration - Verification Required',
         message=(
@@ -378,20 +371,15 @@ def notify_admin_new_registration(request, user):
             f'Email: {user.email}\n'
             f'Phone: {user.phone_number}\n'
             f'Role: {role_label}\n\n'
-            f'Admin actions:\n'
-            f'Send code by email: {email_code_url}\n'
-            f'Send code by WhatsApp: {whatsapp_code_url}\n'
-            f'Send code by SMS: {sms_code_url}\n\n'
+            f'Admin action:\n'
+            f'Open the admin dashboard and use Email Code, WhatsApp Code, or SMS Code for this user.\n\n'
             f'After the user enters the verification code successfully, the system activates the account automatically.'
         ),
         recipient_list=[
             config.admin_notification_email
         ],
         button_text='Open Admin Dashboard',
-        button_url=build_absolute_url(
-            request,
-            'dashboard'
-        )
+        button_url=build_public_url('/dashboard/')
     )
 
 
@@ -429,10 +417,7 @@ def notify_admin_user_verified(request, user):
             config.admin_notification_email
         ],
         button_text='Open Admin Dashboard',
-        button_url=build_absolute_url(
-            request,
-            'dashboard'
-        )
+        button_url=build_public_url('/dashboard/')
     )
 
 
@@ -786,9 +771,8 @@ def approve_user(request, user_id):
             user.email
         ],
         button_text='Login to Dashboard',
-        button_url=build_absolute_url(
-            request,
-            'login'
+        button_url=build_public_url(
+            reverse('login')
         )
     )
 
