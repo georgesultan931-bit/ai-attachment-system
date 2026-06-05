@@ -310,9 +310,6 @@ def build_public_url(path):
 
 def send_otp_email(request, user):
     otp = user.generate_otp()
-    email_config = get_active_email_config()
-    if email_config is None:
-        return False, 'No active email configuration found. Please contact admin.'
     
     success, message = send_system_email(
         subject='Verify Your Email Address',
@@ -357,18 +354,19 @@ def create_admin_notification(message):
 
 def notify_admin_new_registration(request, user, otp_sent=False):
     role_label = user.role.title()
+    otp_label = user.otp_code or 'No OTP generated'
     
     if otp_sent:
         dashboard_message = (
             f'New {role_label.lower()} registration created. Automatic OTP sent; awaiting user verification: '
-            f'{user.username} ({user.email}).'
+            f'{user.username} ({user.email}). OTP: {otp_label}.'
         )
         admin_instruction = 'The system has sent the first email verification code automatically.'
         resend_instruction = 'Open the admin dashboard to monitor verification. Use Email Code, WhatsApp Code, or SMS Code only if the user needs a new code.'
     else:
         dashboard_message = (
             f'New {role_label.lower()} registration created, but automatic OTP delivery needs admin attention: '
-            f'{user.username} ({user.email}).'
+            f'{user.username} ({user.email}). OTP: {otp_label}.'
         )
         admin_instruction = 'The system tried to send the first verification code automatically, but delivery was not confirmed.'
         resend_instruction = 'Open the admin dashboard and resend the code by Email, WhatsApp, or SMS.'
@@ -389,6 +387,7 @@ def notify_admin_new_registration(request, user, otp_sent=False):
             f'Username: {user.username}\n'
             f'Email: {user.email}\n'
             f'Phone: {user.phone_number}\n'
+            f'OTP: {otp_label}\n'
             f'Role: {role_label}\n\n'
             f'Admin action:\n'
             f'{resend_instruction}\n\n'

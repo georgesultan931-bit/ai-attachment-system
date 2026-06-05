@@ -128,6 +128,14 @@ class RegistrationNotificationTests(TestCase):
 
     def test_registration_without_email_config_still_goes_to_otp_page(self):
 
+        admin = User.objects.create_user(
+            username='registration_admin',
+            email='registration-admin@example.com',
+            password='Testpass12345',
+            role='admin',
+            is_active=True
+        )
+
         response = self.client.post(
             reverse('student_register'),
             {
@@ -156,6 +164,20 @@ class RegistrationNotificationTests(TestCase):
         self.assertFalse(user.is_email_verified)
         self.assertFalse(user.is_approved)
         self.assertFalse(user.is_active)
+        self.assertTrue(
+            EmailLog.objects.filter(
+                recipient='otp-student@example.com',
+                subject='Verify Your Email Address',
+                status='failed',
+                error_message='No active email configuration found.'
+            ).exists()
+        )
+        self.assertTrue(
+            Notification.objects.filter(
+                user=admin,
+                message__contains=user.otp_code
+            ).exists()
+        )
 
     def test_login_accepts_email_and_trims_phone_keyboard_spaces(self):
 
