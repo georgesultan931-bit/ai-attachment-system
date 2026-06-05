@@ -48,6 +48,14 @@ def home(request):
     return render(request, 'home.html', context)
 
 
+def account_start(request):
+
+    return render(
+        request,
+        'accounts/account_start.html'
+    )
+
+
 @login_required
 def dashboard(request):
 

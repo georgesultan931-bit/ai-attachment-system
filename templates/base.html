@@ -450,6 +450,12 @@
                 Login
             </a>
 
+            <a class="sidebar-link {% if request.resolver_match.url_name == 'account_start' %}active{% endif %}"
+               href="{% url 'account_start' %}">
+                <i class="bi bi-grid"></i>
+                Start Here
+            </a>
+
             <a class="sidebar-link {% if request.resolver_match.url_name == 'student_register' %}active{% endif %}"
                href="{% url 'student_register' %}">
                 <i class="bi bi-person-plus"></i>

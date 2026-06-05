@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+    .start-card {
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 16px 36px rgba(15, 23, 42, .08);
+    }
+
+    .start-action {
+        min-height: 82px;
+        border-radius: 8px;
+        text-align: left;
+    }
+</style>
+
+<div class="row justify-content-center">
+    <div class="col-xl-7 col-lg-9">
+        <div class="card start-card">
+            <div class="card-body p-4 p-md-5">
+
+                <span class="badge text-bg-success mb-3">Account Access</span>
+
+                <h1 class="fw-bold mb-2">
+                    Start Here
+                </h1>
+
+                <p class="text-muted mb-4">
+                    Choose what you want to do.
+                </p>
+
+                <div class="d-grid gap-3">
+
+                    <a href="{% url 'student_register' %}"
+                       class="btn btn-dark btn-lg start-action d-flex align-items-center gap-3">
+                        <i class="bi bi-person-plus fs-3"></i>
+                        <span>
+                            <strong>Student Register</strong><br>
+                            <small>Create a student account and verify by OTP.</small>
+                        </span>
+                    </a>
+
+                    <a href="{% url 'employer_register' %}"
+                       class="btn btn-outline-dark btn-lg start-action d-flex align-items-center gap-3">
+                        <i class="bi bi-building-add fs-3"></i>
+                        <span>
+                            <strong>Employer Register</strong><br>
+                            <small>Create an employer account.</small>
+                        </span>
+                    </a>
+
+                    <a href="{% url 'login' %}"
+                       class="btn btn-outline-primary btn-lg start-action d-flex align-items-center gap-3">
+                        <i class="bi bi-box-arrow-in-right fs-3"></i>
+                        <span>
+                            <strong>Login</strong><br>
+                            <small>Already registered? Continue to your dashboard.</small>
+                        </span>
+                    </a>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

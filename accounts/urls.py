@@ -30,6 +30,12 @@ urlpatterns = [
     ),
 
     path(
+        'register/',
+        views.account_start,
+        name='account_start'
+    ),
+
+    path(
         'register/employer/',
         views.employer_register,
         name='employer_register'
