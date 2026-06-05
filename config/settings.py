@@ -52,7 +52,7 @@ CSRF_TRUSTED_ORIGINS = [
 
 PUBLIC_SITE_URL = os.environ.get(
     'PUBLIC_SITE_URL',
-    ''
+    'https://ai-attachment-system.onrender.com'
 ).rstrip('/')
 
 if not DEBUG:
