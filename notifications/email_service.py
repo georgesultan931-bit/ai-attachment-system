@@ -1,6 +1,7 @@
 import os
 from types import SimpleNamespace
 
+from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.utils.html import strip_tags
 
@@ -8,6 +9,15 @@ from .models import (
     EmailConfiguration,
     EmailLog
 )
+
+
+def _clean_setting(value):
+
+    if value is None:
+
+        return ''
+
+    return str(value).strip()
 
 
 def get_active_email_config():
@@ -20,9 +30,24 @@ def get_active_email_config():
 
         return config
 
-    email_host = os.environ.get('EMAIL_HOST', '').strip()
-    email_host_user = os.environ.get('EMAIL_HOST_USER', '').strip()
-    email_host_password = os.environ.get('EMAIL_HOST_PASSWORD', '').strip()
+    email_host = _clean_setting(
+        os.environ.get('EMAIL_HOST')
+        or getattr(settings, 'EMAIL_HOST', '')
+    )
+
+    email_host_user_env = os.environ.get('EMAIL_HOST_USER')
+    legacy_email_user_env = os.environ.get('EMAIL_USER')
+    email_host_user = _clean_setting(
+        email_host_user_env
+        or legacy_email_user_env
+        or getattr(settings, 'EMAIL_HOST_USER', '')
+    )
+
+    email_host_password = _clean_setting(
+        os.environ.get('EMAIL_HOST_PASSWORD')
+        or os.environ.get('EMAIL_PASS')
+        or getattr(settings, 'EMAIL_HOST_PASSWORD', '')
+    )
 
     if not all([
         email_host,
@@ -34,20 +59,28 @@ def get_active_email_config():
 
     return SimpleNamespace(
         email_host=email_host,
-        email_port=int(os.environ.get('EMAIL_PORT', '587')),
-        email_use_tls=os.environ.get(
+        email_port=int(
+            os.environ.get(
+                'EMAIL_PORT',
+                getattr(settings, 'EMAIL_PORT', 587)
+            )
+        ),
+        email_use_tls=str(os.environ.get(
             'EMAIL_USE_TLS',
-            'True'
-        ).lower() == 'true',
+            getattr(settings, 'EMAIL_USE_TLS', True)
+        )).lower() == 'true',
         email_host_user=email_host_user,
         email_host_password=email_host_password,
-        default_from_email=os.environ.get(
-            'DEFAULT_FROM_EMAIL',
-            email_host_user
+        default_from_email=_clean_setting(
+            os.environ.get('DEFAULT_FROM_EMAIL')
+            or (email_host_user if legacy_email_user_env and not email_host_user_env else '')
+            or getattr(settings, 'DEFAULT_FROM_EMAIL', '')
+            or email_host_user
         ),
-        admin_notification_email=os.environ.get(
-            'ADMIN_NOTIFICATION_EMAIL',
-            email_host_user
+        admin_notification_email=_clean_setting(
+            os.environ.get('ADMIN_NOTIFICATION_EMAIL')
+            or getattr(settings, 'ADMIN_NOTIFICATION_EMAIL', '')
+            or email_host_user
         ),
     )
 

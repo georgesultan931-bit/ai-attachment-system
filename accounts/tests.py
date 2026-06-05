@@ -296,6 +296,35 @@ class RegistrationNotificationTests(TestCase):
             'admin@example.com'
         )
 
+    def test_email_config_accepts_original_email_user_aliases(self):
+
+        with patch.dict(
+            'os.environ',
+            {
+                'EMAIL_HOST': 'smtp.gmail.com',
+                'EMAIL_PORT': '587',
+                'EMAIL_USE_TLS': 'True',
+                'EMAIL_USER': 'original-sender@example.com',
+                'EMAIL_PASS': 'original-app-password',
+            },
+            clear=True
+        ):
+
+            config = get_active_email_config()
+
+        self.assertEqual(
+            config.email_host_user,
+            'original-sender@example.com'
+        )
+        self.assertEqual(
+            config.email_host_password,
+            'original-app-password'
+        )
+        self.assertEqual(
+            config.default_from_email,
+            'original-sender@example.com'
+        )
+
     def test_missing_email_config_creates_failed_email_log(self):
 
         success, message = send_system_email(
