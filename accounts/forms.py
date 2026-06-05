@@ -164,7 +164,10 @@ class StudentRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
         widget=forms.EmailInput(
             attrs={
                 'class': 'form-control',
-                'placeholder': 'Enter your email address'
+                'placeholder': 'Enter your email address',
+                'autocapitalize': 'none',
+                'autocomplete': 'email',
+                'spellcheck': 'false',
             }
         )
     )
@@ -174,7 +177,9 @@ class StudentRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
         widget=forms.TextInput(
             attrs={
                 'class': 'form-control',
-                'placeholder': 'Enter your phone number'
+                'placeholder': 'Enter your phone number',
+                'autocomplete': 'tel',
+                'inputmode': 'tel',
             }
         )
     )
@@ -263,7 +268,10 @@ class EmployerRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
         widget=forms.EmailInput(
             attrs={
                 'class': 'form-control',
-                'placeholder': 'Enter company email address'
+                'placeholder': 'Enter company email address',
+                'autocapitalize': 'none',
+                'autocomplete': 'email',
+                'spellcheck': 'false',
             }
         )
     )
@@ -273,7 +281,9 @@ class EmployerRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
         widget=forms.TextInput(
             attrs={
                 'class': 'form-control',
-                'placeholder': 'Enter company phone number'
+                'placeholder': 'Enter company phone number',
+                'autocomplete': 'tel',
+                'inputmode': 'tel',
             }
         )
     )
@@ -364,7 +374,10 @@ class OTPVerificationForm(forms.Form):
         widget=forms.TextInput(
             attrs={
                 'class': 'form-control',
-                'placeholder': 'Enter 6-digit OTP'
+                'placeholder': 'Enter 6-digit OTP',
+                'autocomplete': 'one-time-code',
+                'inputmode': 'numeric',
+                'pattern': '[0-9]*',
             }
         )
     )
