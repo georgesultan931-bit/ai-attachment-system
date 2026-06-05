@@ -446,7 +446,7 @@ def notify_admin_user_verified(request, user):
     role_label = user.role.title()
 
     dashboard_message = (
-        f'{role_label} account verified by OTP and awaiting admin approval: '
+        f'{role_label} account verified by OTP and activated: '
         f'{user.username} ({user.email}).'
     )
 
@@ -459,13 +459,13 @@ def notify_admin_user_verified(request, user):
         return False, 'No active email configuration found.'
 
     return send_system_email(
-        subject=f'{role_label} Verified - Approval Required',
+        subject=f'{role_label} Verified and Activated',
         message=(
-            f'{user.username} has entered the verification code successfully and is waiting for final admin approval.\n\n'
+            f'{user.username} has entered the verification code successfully.\n\n'
             f'Email: {user.email}\n'
             f'Phone: {user.phone_number}\n'
             f'Role: {role_label}\n\n'
-            f'Open the admin dashboard and approve the account to activate access.'
+            f'The account has been activated automatically and the user can now access their dashboard.'
         ),
         recipient_list=[
             config.admin_notification_email
@@ -635,8 +635,8 @@ def verify_otp(request, user_id):
             elif entered_otp == user.otp_code:
 
                 user.is_email_verified = True
-                user.is_approved = False
-                user.is_active = False
+                user.is_approved = True
+                user.is_active = True
                 user.otp_code = None
                 user.otp_created_at = None
                 user.save()
@@ -648,10 +648,16 @@ def verify_otp(request, user_id):
 
                 messages.success(
                     request,
-                    'Verification successful. Admin has been notified to approve your account.'
+                    'Verification successful. You are now signed in.'
                 )
 
-                return redirect('pending_approval')
+                login(
+                    request,
+                    user,
+                    backend='django.contrib.auth.backends.ModelBackend'
+                )
+
+                return redirect('dashboard')
 
             else:
 

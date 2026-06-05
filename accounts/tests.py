@@ -263,7 +263,7 @@ class RegistrationNotificationTests(TestCase):
             ).exists()
         )
 
-    def test_otp_verification_waits_for_admin_approval(self):
+    def test_otp_verification_activates_and_logs_in_user(self):
 
         user = User.objects.create_user(
             username='approval_student',
@@ -293,8 +293,9 @@ class RegistrationNotificationTests(TestCase):
 
         self.assertRedirects(
             response,
-            reverse('pending_approval')
+            reverse('dashboard'),
+            fetch_redirect_response=False
         )
         self.assertTrue(user.is_email_verified)
-        self.assertFalse(user.is_approved)
-        self.assertFalse(user.is_active)
+        self.assertTrue(user.is_approved)
+        self.assertTrue(user.is_active)
