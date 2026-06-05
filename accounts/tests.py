@@ -173,7 +173,7 @@ class RegistrationNotificationTests(TestCase):
             reverse('login'),
             {
                 'username': '  phone-user@example.com  ',
-                'password': 'Testpass12345',
+                'password': ' Testpass12345 ',
             }
         )
 
@@ -181,6 +181,41 @@ class RegistrationNotificationTests(TestCase):
             response,
             reverse('dashboard'),
             fetch_redirect_response=False
+        )
+
+    def test_registration_trims_phone_keyboard_spaces(self):
+
+        response = self.client.post(
+            reverse('student_register'),
+            {
+                'username': '  spaceduser  ',
+                'email': '  SPACED-USER@EXAMPLE.COM  ',
+                'phone_number': ' 0712345678 ',
+                'password1': 'Testpass12345',
+                'password2': 'Testpass12345',
+            }
+        )
+
+        user = User.objects.get(
+            username='spaceduser'
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                'verify_otp',
+                args=[
+                    user.id
+                ]
+            )
+        )
+        self.assertEqual(
+            user.email,
+            'spaced-user@example.com'
+        )
+        self.assertEqual(
+            user.phone_number,
+            '0712345678'
         )
 
     def test_login_accepts_username_case_insensitively(self):

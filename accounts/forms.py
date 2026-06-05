@@ -1,5 +1,4 @@
 from django import forms
-from django.contrib.auth import authenticate
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core.exceptions import ValidationError
 
@@ -92,6 +91,8 @@ class CustomLoginForm(AuthenticationForm):
                 'class': 'form-control',
                 'placeholder': 'Enter password',
                 'autocomplete': 'current-password',
+                'autocapitalize': 'none',
+                'spellcheck': 'false',
             }
         )
     )
@@ -121,7 +122,10 @@ class CustomLoginForm(AuthenticationForm):
             ''
         ).strip()
 
-        password = self.cleaned_data.get('password')
+        password = self.cleaned_data.get(
+            'password',
+            ''
+        ).strip()
 
         if username_or_email and password:
 
@@ -138,18 +142,7 @@ class CustomLoginForm(AuthenticationForm):
                 **lookup
             ).first()
 
-            username = username_or_email
-
-            if matching_user is not None:
-                username = matching_user.get_username()
-
-            self.user_cache = authenticate(
-                self.request,
-                username=username,
-                password=password
-            )
-
-            if self.user_cache is None:
+            if matching_user is None or not matching_user.check_password(password):
 
                 raise ValidationError(
                     self.error_messages['invalid_login'],
@@ -159,6 +152,7 @@ class CustomLoginForm(AuthenticationForm):
                     },
                 )
 
+            self.user_cache = matching_user
             self.confirm_login_allowed(self.user_cache)
 
         return self.cleaned_data
@@ -203,17 +197,26 @@ class StudentRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
 
         self.fields['username'].widget.attrs.update({
             'class': 'form-control',
-            'placeholder': 'Choose username'
+            'placeholder': 'Choose username',
+            'autocapitalize': 'none',
+            'autocomplete': 'username',
+            'spellcheck': 'false',
         })
 
         self.fields['password1'].widget.attrs.update({
             'class': 'form-control',
-            'placeholder': 'Create password'
+            'placeholder': 'Create password',
+            'autocapitalize': 'none',
+            'autocomplete': 'new-password',
+            'spellcheck': 'false',
         })
 
         self.fields['password2'].widget.attrs.update({
             'class': 'form-control',
-            'placeholder': 'Confirm password'
+            'placeholder': 'Confirm password',
+            'autocapitalize': 'none',
+            'autocomplete': 'new-password',
+            'spellcheck': 'false',
         })
 
     def clean_email(self):
@@ -221,6 +224,20 @@ class StudentRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
         email = self.cleaned_data.get('email', '').strip().lower()
 
         return email
+
+    def clean_username(self):
+
+        return self.cleaned_data.get(
+            'username',
+            ''
+        ).strip()
+
+    def clean_phone_number(self):
+
+        return self.cleaned_data.get(
+            'phone_number',
+            ''
+        ).strip()
 
     def save(self, commit=True):
 
@@ -279,17 +296,26 @@ class EmployerRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
 
         self.fields['username'].widget.attrs.update({
             'class': 'form-control',
-            'placeholder': 'Choose employer username'
+            'placeholder': 'Choose employer username',
+            'autocapitalize': 'none',
+            'autocomplete': 'username',
+            'spellcheck': 'false',
         })
 
         self.fields['password1'].widget.attrs.update({
             'class': 'form-control',
-            'placeholder': 'Create password'
+            'placeholder': 'Create password',
+            'autocapitalize': 'none',
+            'autocomplete': 'new-password',
+            'spellcheck': 'false',
         })
 
         self.fields['password2'].widget.attrs.update({
             'class': 'form-control',
-            'placeholder': 'Confirm password'
+            'placeholder': 'Confirm password',
+            'autocapitalize': 'none',
+            'autocomplete': 'new-password',
+            'spellcheck': 'false',
         })
 
     def clean_email(self):
@@ -297,6 +323,20 @@ class EmployerRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
         email = self.cleaned_data.get('email', '').strip().lower()
 
         return email
+
+    def clean_username(self):
+
+        return self.cleaned_data.get(
+            'username',
+            ''
+        ).strip()
+
+    def clean_phone_number(self):
+
+        return self.cleaned_data.get(
+            'phone_number',
+            ''
+        ).strip()
 
     def save(self, commit=True):
 
