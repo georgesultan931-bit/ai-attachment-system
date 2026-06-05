@@ -140,7 +140,11 @@
 
                 {% if form.errors %}
                     <div class="alert alert-danger">
-                        Invalid username or password.
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% empty %}
+                            Invalid username/email or password.
+                        {% endfor %}
                     </div>
                 {% endif %}
 
@@ -148,7 +152,7 @@
                     {% csrf_token %}
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Username</label>
+                        <label class="form-label fw-semibold">Username or Email</label>
                         {{ form.username }}
                     </div>
 

@@ -150,6 +150,58 @@ class RegistrationNotificationTests(TestCase):
         self.assertFalse(user.is_approved)
         self.assertFalse(user.is_active)
 
+    def test_login_accepts_email_and_trims_phone_keyboard_spaces(self):
+
+        User.objects.create_user(
+            username='phoneuser',
+            email='phone-user@example.com',
+            password='Testpass12345',
+            role='student',
+            is_active=True,
+            is_approved=True,
+            is_email_verified=True
+        )
+
+        response = self.client.post(
+            reverse('login'),
+            {
+                'username': '  phone-user@example.com  ',
+                'password': 'Testpass12345',
+            }
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('dashboard'),
+            fetch_redirect_response=False
+        )
+
+    def test_login_accepts_username_case_insensitively(self):
+
+        User.objects.create_user(
+            username='caseuser',
+            email='case-user@example.com',
+            password='Testpass12345',
+            role='student',
+            is_active=True,
+            is_approved=True,
+            is_email_verified=True
+        )
+
+        response = self.client.post(
+            reverse('login'),
+            {
+                'username': 'CaseUser',
+                'password': 'Testpass12345',
+            }
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('dashboard'),
+            fetch_redirect_response=False
+        )
+
     def test_otp_verification_waits_for_admin_approval(self):
 
         user = User.objects.create_user(
