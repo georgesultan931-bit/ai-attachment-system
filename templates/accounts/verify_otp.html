@@ -1,53 +1,185 @@
-{% extends 'base.html' %}
-
-{% block content %}
-
-<div class="row justify-content-center">
-
-    <div class="col-md-6">
-
-        <div class="card shadow border-0" style="border-radius:24px;">
-
-            <div class="card-body p-5 text-center">
-
-                <h2 class="fw-bold mb-3">
-                    Verify Your Email
-                </h2>
-
-                <p class="text-muted">
-                    Enter the 6-digit verification code sent through email, WhatsApp, or SMS. After verification, your dashboard opens automatically.
-                </p>
-
-                {% if not email_delivery_ready %}
-                    <div class="alert alert-warning text-start">
-                        Email delivery is not configured yet. If you did not receive a code, admin must resend it through WhatsApp/SMS or configure email first.
-                    </div>
-                {% endif %}
-
-                <form method="post">
-
-                    {% csrf_token %}
-
-                    <div class="mb-4">
-                        {{ form.otp_code }}
-                    </div>
-
-                    <button class="btn btn-primary w-100">
-                        Verify OTP
-                    </button>
-
-                </form>
-
-                <p class="text-muted small mt-3 mb-0">
-                    If you did not receive a code, ask admin to resend it from the dashboard.
-                </p>
-
-            </div>
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Verify OTP | AI Attachment System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .verify-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+        }
+        
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .info-text {
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 5px;
+            font-family: monospace;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .message {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .message-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .message-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .back-link a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        @media (max-width: 768px) {
+            .verify-container {
+                padding: 30px 20px;
+            }
+            
+            input {
+                font-size: 24px;
+                letter-spacing: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="verify-container">
+        <h2>Verify Your Email</h2>
+        
+        <div class="info-text">
+            We've sent a verification code to <strong>{{ user_obj.email }}</strong>.<br>
+            Please enter the 6-digit code below to verify your account.
         </div>
-
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message message-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% if not email_delivery_ready %}
+            <div class="message message-warning">
+                <strong>Note:</strong> Email configuration is not fully set up. 
+                Please contact the administrator to receive your verification code.
+            </div>
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="id_otp_code">Verification Code</label>
+                <input type="text" 
+                       name="otp_code" 
+                       id="id_otp_code" 
+                       maxlength="6" 
+                       required 
+                       placeholder="000000"
+                       pattern="[0-9]{6}"
+                       inputmode="numeric"
+                       autocomplete="off">
+            </div>
+            
+            <button type="submit">Verify Account</button>
+        </form>
+        
+        <div class="back-link">
+            <a href="{% url 'home' %}">← Back to Home</a>
+        </div>
     </div>
-
-</div>
-
-{% endblock %}
+    
+    <script>
+        // Auto-focus and mobile optimizations
+        document.getElementById('id_otp_code').focus();
+        
+        // Auto-submit when 6 digits are entered (mobile convenience)
+        const otpInput = document.getElementById('id_otp_code');
+        otpInput.addEventListener('input', function(e) {
+            if (this.value.length === 6 && /^\d+$/.test(this.value)) {
+                this.form.submit();
+            }
+        });
+    </script>
+</body>
+</html>

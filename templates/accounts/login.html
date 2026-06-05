@@ -1,198 +1,288 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | AI Internship System</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Login | AI Attachment System</title>
     <style>
-        body {
-            min-height: 100vh;
-            background: #eef3f7;
-            font-family: 'Segoe UI', sans-serif;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-
-        .login-wrapper {
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
-            align-items: center;
             justify-content: center;
-            padding: 30px;
+            align-items: center;
+            padding: 20px;
         }
-
-        .login-card {
-            width: 950px;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 24px 58px rgba(15,23,42,.18);
+        
+        .login-container {
             background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+            padding: 40px;
+            animation: fadeIn 0.5s ease-out;
         }
-
-        .login-left {
-            background:
-                linear-gradient(180deg, rgba(15, 23, 42, .92), rgba(15, 23, 42, .7)),
-                url("{% static 'images/home-platform-hero.png' %}");
-            background-size: cover;
-            background-position: center;
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h2 {
+            color: #667eea;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 55px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-
-        .login-right {
-            padding: 55px;
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
-
-        .feature-box {
-            background: rgba(255,255,255,.12);
-            border-radius: 8px;
-            padding: 18px;
-            margin-top: 18px;
+        
+        button:active {
+            transform: translateY(0);
         }
-
-        .form-control {
-            height: 48px;
-            border-radius: 8px;
+        
+        .message {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
         }
-
-        .btn-login {
-            height: 48px;
-            border-radius: 8px;
-            font-weight: 700;
+        
+        .message-error {
+            background: #fee;
+            color: #c33;
+            border-left: 4px solid #c33;
         }
-
+        
+        .message-success {
+            background: #efe;
+            color: #3c3;
+            border-left: 4px solid #3c3;
+        }
+        
+        .message-warning {
+            background: #ffeaa7;
+            color: #e17055;
+            border-left: 4px solid #e17055;
+        }
+        
+        .links {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .links a:hover {
+            text-decoration: underline;
+        }
+        
+        .register-link {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e1e5e9;
+        }
+        
         @media (max-width: 768px) {
-            .login-wrapper {
-                padding: 16px;
-                align-items: flex-start;
+            .login-container {
+                padding: 30px 20px;
             }
-
-            .login-card {
-                width: 100%;
-            }
-
-            .login-left,
-            .login-right {
-                padding: 32px;
+            
+            input {
+                font-size: 16px; /* Prevents zoom on mobile */
             }
         }
     </style>
 </head>
-
 <body>
-
-<div class="login-wrapper">
-
-    <div class="login-card">
-
-        <div class="row g-0">
-
-            <div class="col-lg-6 login-left">
-
-                <h1 class="fw-bold mb-3">
-                    AI Internship & Attachment System
-                </h1>
-
-                <p class="text-white-50 mb-4">
-                    Smart internship matching, applicant ranking, CV analysis, interviews, and recruitment analytics.
-                </p>
-
-                <div class="feature-box">
-                    <i class="bi bi-cpu-fill fs-3"></i>
-                    <h5 class="fw-bold mt-2">AI Matching</h5>
-                    <small>Students are matched to opportunities using skills and CV analysis.</small>
-                </div>
-
-                <div class="feature-box">
-                    <i class="bi bi-bar-chart-fill fs-3"></i>
-                    <h5 class="fw-bold mt-2">Analytics Dashboard</h5>
-                    <small>Employers and admins track recruitment performance visually.</small>
-                </div>
-
-                <div class="feature-box">
-                    <i class="bi bi-bell-fill fs-3"></i>
-                    <h5 class="fw-bold mt-2">Smart Notifications</h5>
-                    <small>Students receive application and interview updates instantly.</small>
-                </div>
-
-            </div>
-
-            <div class="col-lg-6 login-right">
-
-                <div class="text-center mb-4">
-
-                    <div class="mb-3">
-                        <i class="bi bi-shield-lock-fill text-primary" style="font-size:55px;"></i>
-                    </div>
-
-                    <h2 class="fw-bold">
-                        Welcome Back
-                    </h2>
-
-                    <p class="text-muted">
-                        Login to continue to your dashboard
-                    </p>
-
-                </div>
-
-                {% if form.errors %}
-                    <div class="alert alert-danger">
-                        {% for error in form.non_field_errors %}
-                            {{ error }}
-                        {% empty %}
-                            Invalid username/email or password.
-                        {% endfor %}
-                    </div>
-                {% endif %}
-
-                <form method="post">
-                    {% csrf_token %}
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Username or Email</label>
-                        {{ form.username }}
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">Password</label>
-                        {{ form.password }}
-                    </div>
-
-                    <button class="btn btn-primary w-100 btn-login" type="submit">
-                        Login
-                    </button>
-                </form>
-
-                <div class="text-center mt-4">
-
-                    <small class="text-muted">
-                        New here?
-                    </small>
-
-                    <div class="mt-2 d-flex gap-2 justify-content-center flex-wrap">
-
-                        <a href="{% url 'student_register' %}" class="btn btn-outline-dark btn-sm">
-                            Student Register
-                        </a>
-
-                        <a href="{% url 'employer_register' %}" class="btn btn-outline-primary btn-sm">
-                            Employer Register
-                        </a>
-
-                    </div>
-
-                </div>
-
-            </div>
-
+    <div class="login-container">
+        <div class="logo">
+            <h2>AI Internship System</h2>
+            <p>Internship & Attachment Matching</p>
         </div>
-
+        
+        <h3 style="text-align: center; margin-bottom: 25px; color: #333;">Welcome Back</h3>
+        
+        <!-- Display messages from Django -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message message-{% if message.tags == 'error' %}error{% elif message.tags == 'warning' %}warning{% else %}{{ message.tags }}{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <!-- Display form errors -->
+        {% if form.non_field_errors %}
+            <div class="message message-error">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <form method="post" action="{% url 'login' %}" autocomplete="on">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="id_username">Username or Email</label>
+                <input type="text" 
+                       name="username" 
+                       id="id_username" 
+                       class="form-control" 
+                       required 
+                       autocomplete="username"
+                       placeholder="Enter your username or email"
+                       value="{{ form.username.value|default:'' }}">
+                {% if form.username.errors %}
+                    <small style="color: #c33; font-size: 12px;">{{ form.username.errors.0 }}</small>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="id_password">Password</label>
+                <input type="password" 
+                       name="password" 
+                       id="id_password" 
+                       class="form-control" 
+                       required 
+                       autocomplete="current-password"
+                       placeholder="Enter your password">
+                {% if form.password.errors %}
+                    <small style="color: #c33; font-size: 12px;">{{ form.password.errors.0 }}</small>
+                {% endif %}
+            </div>
+            
+            <button type="submit">Login</button>
+            
+            {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
+        </form>
+        
+        <div class="links">
+            <div>
+                <a href="{% url 'account_start' %}">Forgot Password?</a>
+            </div>
+            <div class="register-link">
+                <a href="{% url 'account_start' %}">Don't have an account? Register here</a>
+            </div>
+        </div>
     </div>
-
-</div>
-
+    
+    <script>
+        // Mobile-specific enhancements
+        (function() {
+            // Detect mobile device
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|Windows Phone/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                // Remove autocomplete restrictions for mobile
+                const form = document.querySelector('form');
+                if (form) {
+                    form.setAttribute('autocomplete', 'on');
+                }
+                
+                // Add touch-friendly feedback
+                const button = document.querySelector('button');
+                if (button) {
+                    button.addEventListener('touchstart', function() {
+                        this.style.transform = 'scale(0.98)';
+                    });
+                    button.addEventListener('touchend', function() {
+                        this.style.transform = '';
+                    });
+                }
+                
+                // Prevent zoom on input focus
+                const inputs = document.querySelectorAll('input');
+                inputs.forEach(input => {
+                    input.addEventListener('focus', function() {
+                        this.style.fontSize = '16px';
+                    });
+                });
+                
+                // Log for debugging
+                console.log('Mobile device detected - applying mobile optimizations');
+            }
+            
+            // CSRF token debug (remove in production)
+            const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfInput && csrfInput.value) {
+                console.log('CSRF token present');
+            }
+        })();
+    </script>
 </body>
 </html>

@@ -1,20 +1,282 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Login | AI Attachment System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+            padding: 40px;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h2 {
+            color: #667eea;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .message {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .message-error {
+            background: #fee;
+            color: #c33;
+            border-left: 4px solid #c33;
+        }
+        
+        .message-success {
+            background: #efe;
+            color: #3c3;
+            border-left: 4px solid #3c3;
+        }
+        
+        .links {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .links a:hover {
+            text-decoration: underline;
+        }
+        
+        .register-link {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e1e5e9;
+        }
+        
+        @media (max-width: 768px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+            
+            input {
+                font-size: 16px; /* Prevents zoom on mobile */
+            }
+        }
+    </style>
 </head>
 <body>
-    <h2>AI Internship & Attachment Matching System</h2>
-    <h3>Login</h3>
-
-    {% if form.errors %}
-        <p style="color:red;">Invalid username or password</p>
-    {% endif %}
-
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Login</button>
-    </form>
+    <div class="login-container">
+        <div class="logo">
+            <h2>AI Internship System</h2>
+            <p>Internship & Attachment Matching</p>
+        </div>
+        
+        <h3 style="text-align: center; margin-bottom: 25px; color: #333;">Welcome Back</h3>
+        
+        <!-- Display messages from Django -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message message-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <!-- Display form errors -->
+        {% if form.non_field_errors %}
+            <div class="message message-error">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <form method="post" action="{% url 'login' %}" autocomplete="on">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="id_username">Username or Email</label>
+                <input type="text" 
+                       name="username" 
+                       id="id_username" 
+                       class="form-control" 
+                       required 
+                       autocomplete="username"
+                       placeholder="Enter your username or email"
+                       value="{{ form.username.value|default:'' }}">
+                {% if form.username.errors %}
+                    <small style="color: #c33; font-size: 12px;">{{ form.username.errors.0 }}</small>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="id_password">Password</label>
+                <input type="password" 
+                       name="password" 
+                       id="id_password" 
+                       class="form-control" 
+                       required 
+                       autocomplete="current-password"
+                       placeholder="Enter your password">
+                {% if form.password.errors %}
+                    <small style="color: #c33; font-size: 12px;">{{ form.password.errors.0 }}</small>
+                {% endif %}
+            </div>
+            
+            <button type="submit">Login</button>
+            
+            {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
+        </form>
+        
+        <div class="links">
+            <div>
+                <a href="{% url 'account_start' %}">Forgot Password?</a>
+            </div>
+            <div class="register-link">
+                <a href="{% url 'account_start' %}">Don't have an account? Register here</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Mobile-specific enhancements
+        (function() {
+            // Detect mobile device
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|Windows Phone/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                // Remove autocomplete restrictions for mobile
+                const form = document.querySelector('form');
+                if (form) {
+                    form.setAttribute('autocomplete', 'on');
+                }
+                
+                // Add touch-friendly feedback
+                const button = document.querySelector('button');
+                if (button) {
+                    button.addEventListener('touchstart', function() {
+                        this.style.transform = 'scale(0.98)';
+                    });
+                    button.addEventListener('touchend', function() {
+                        this.style.transform = '';
+                    });
+                }
+                
+                // Prevent zoom on input focus
+                const inputs = document.querySelectorAll('input');
+                inputs.forEach(input => {
+                    input.addEventListener('focus', function() {
+                        this.style.fontSize = '16px';
+                    });
+                });
+                
+                // Store login attempt for debugging
+                console.log('Mobile device detected - applying mobile optimizations');
+            }
+            
+            // Add CSRF token debug (remove in production)
+            const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfInput && csrfInput.value) {
+                console.log('CSRF token present');
+            }
+        })();
+    </script>
 </body>
 </html>

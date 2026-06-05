@@ -1,4 +1,5 @@
 from django.urls import path
+from django.contrib.auth import views as auth_views
 
 from . import views
 
@@ -15,6 +16,13 @@ urlpatterns = [
         'home/',
         views.home,
         name='home'
+    ),
+
+    # FIXED: Added login URL with custom view for mobile compatibility
+    path(
+        'login/',
+        views.user_login,
+        name='login'
     ),
 
     path(
@@ -84,9 +92,11 @@ urlpatterns = [
     ),
 
     path(
-    'delete-user/<int:user_id>/',
-    views.delete_user_account,
-    name='delete_user_account'
-),
-
+        'delete-user/<int:user_id>/',
+        views.delete_user_account,
+        name='delete_user_account'
+    ),
+    
+path('create-student-profile/', views.create_student_profile, name='create_student_profile'),
+path('create-employer-profile/', views.create_employer_profile, name='create_employer_profile'),
 ]

@@ -328,7 +328,7 @@ class RegistrationNotificationTests(TestCase):
 
         self.assertRedirects(
             response,
-            reverse('dashboard'),
+            reverse('create_student_profile'),
             fetch_redirect_response=False
         )
         self.assertTrue(user.is_email_verified)

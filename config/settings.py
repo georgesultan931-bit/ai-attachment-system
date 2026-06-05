@@ -222,7 +222,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Email Configuration - Development
 # OTP emails will appear in the terminal while testing.
 
-EMAIL_BACKEND = 'notifications.email_backend.LocalSmtpEmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 # Local development workaround for networks/antivirus tools that intercept
 # smtp.gmail.com with a self-signed certificate. Disable this in production.
@@ -233,5 +233,44 @@ EMAIL_ALLOW_INSECURE_SMTP_SSL = os.environ.get(
 
 DEFAULT_FROM_EMAIL = os.environ.get(
     'DEFAULT_FROM_EMAIL',
-    'noreply@aiinternship.local'
+    "georgesultan931@gmail.com"
 )
+
+# Add these settings to the bottom of your existing settings.py file
+# ==============================================================
+
+# Session Settings for Mobile Compatibility
+# ==============================================================
+SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'  # Changed from 'Strict' for mobile compatibility
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_SAVE_EVERY_REQUEST = True  # Important for mobile session persistence
+
+# CSRF Settings for Mobile
+# ==============================================================
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_USE_SESSIONS = False
+
+# Override HTTPS settings for mobile if not in production
+if DEBUG:
+    # During development, allow non-HTTPS for mobile testing
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+else:
+    # In production with HTTPS, these should be True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+# Authentication Backend (ensure it's explicitly set)
+# ==============================================================
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# Login URL (ensure this matches your urlpatterns)
+# ==============================================================
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'login'
