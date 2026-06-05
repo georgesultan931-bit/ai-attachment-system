@@ -270,7 +270,7 @@
                 </h4>
 
                 <small class="text-muted">
-                    Registered users waiting for verification codes
+                    Registered users waiting for OTP verification
                 </small>
             </div>
 
@@ -341,19 +341,19 @@
                                     <a href="{% url 'send_user_verification_code_channel' user.id 'email' %}"
                                        class="btn btn-outline-primary">
                                         <i class="bi bi-envelope-fill"></i>
-                                        Email Code
+                                        Resend Email
                                     </a>
 
                                     <a href="{% url 'send_user_verification_code_channel' user.id 'whatsapp' %}"
                                        class="btn btn-outline-success">
                                         <i class="bi bi-whatsapp"></i>
-                                        WhatsApp Code
+                                        WhatsApp
                                     </a>
 
                                     <a href="{% url 'send_user_verification_code_channel' user.id 'sms' %}"
                                        class="btn btn-outline-dark">
                                         <i class="bi bi-chat-dots-fill"></i>
-                                        SMS Code
+                                        SMS
                                     </a>
                                 </div>
                             {% endif %}

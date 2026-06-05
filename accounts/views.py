@@ -332,14 +332,39 @@ def create_admin_notification(message):
     return admin_users.count()
 
 
-def notify_admin_new_registration(request, user):
+def notify_admin_new_registration(request, user, otp_sent=False):
 
     role_label = user.role.title()
 
-    dashboard_message = (
-        f'New {role_label.lower()} registration awaiting verification code: '
-        f'{user.username} ({user.email}).'
-    )
+    if otp_sent:
+
+        dashboard_message = (
+            f'New {role_label.lower()} registration created. Automatic OTP sent; awaiting user verification: '
+            f'{user.username} ({user.email}).'
+        )
+
+        admin_instruction = (
+            'The system has sent the first email verification code automatically.'
+        )
+
+        resend_instruction = (
+            'Open the admin dashboard to monitor verification. Use Email Code, WhatsApp Code, or SMS Code only if the user needs a new code.'
+        )
+
+    else:
+
+        dashboard_message = (
+            f'New {role_label.lower()} registration created, but automatic OTP delivery needs admin attention: '
+            f'{user.username} ({user.email}).'
+        )
+
+        admin_instruction = (
+            'The system tried to send the first verification code automatically, but delivery was not confirmed.'
+        )
+
+        resend_instruction = (
+            'Open the admin dashboard and resend the code by Email, WhatsApp, or SMS.'
+        )
 
     notified_admins = create_admin_notification(
         dashboard_message
@@ -366,13 +391,13 @@ def notify_admin_new_registration(request, user):
     return send_system_email(
         subject=f'New {role_label} Registration - Verification Required',
         message=(
-            f'A new {role_label.lower()} has registered and is waiting for you to send a verification code.\n\n'
+            f'A new {role_label.lower()} has registered. {admin_instruction}\n\n'
             f'Username: {user.username}\n'
             f'Email: {user.email}\n'
             f'Phone: {user.phone_number}\n'
             f'Role: {role_label}\n\n'
             f'Admin action:\n'
-            f'Open the admin dashboard and use Email Code, WhatsApp Code, or SMS Code for this user.\n\n'
+            f'{resend_instruction}\n\n'
             f'After the user enters the verification code successfully, the system activates the account automatically.'
         ),
         recipient_list=[
@@ -433,14 +458,32 @@ def student_register(request):
 
                 user = form.save()
 
-                notify_admin_new_registration(
+                otp_success, otp_message = send_otp_email(
                     request,
                     user
                 )
 
-                messages.success(
+                notify_admin_new_registration(
                     request,
-                    'Account created. An admin will review your registration and send your verification code.'
+                    user,
+                    otp_success
+                )
+
+                if otp_success:
+
+                    messages.success(
+                        request,
+                        'Account created. A verification code has been sent to your email.'
+                    )
+
+                    return redirect(
+                        'verify_otp',
+                        user.id
+                    )
+
+                messages.warning(
+                    request,
+                    f'Account created, but the automatic email code was not delivered. Admin has been alerted. {otp_message}'
                 )
 
                 return redirect('pending_approval')
@@ -477,14 +520,32 @@ def employer_register(request):
 
                 user = form.save()
 
-                notify_admin_new_registration(
+                otp_success, otp_message = send_otp_email(
                     request,
                     user
                 )
 
-                messages.success(
+                notify_admin_new_registration(
                     request,
-                    'Employer account created. An admin will review your registration and send your verification code.'
+                    user,
+                    otp_success
+                )
+
+                if otp_success:
+
+                    messages.success(
+                        request,
+                        'Employer account created. A verification code has been sent to your email.'
+                    )
+
+                    return redirect(
+                        'verify_otp',
+                        user.id
+                    )
+
+                messages.warning(
+                    request,
+                    f'Employer account created, but the automatic email code was not delivered. Admin has been alerted. {otp_message}'
                 )
 
                 return redirect('pending_approval')
