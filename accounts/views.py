@@ -155,7 +155,8 @@ def dashboard(request):
             'student',
             'employer'
         ],
-        is_approved=False
+    ).filter(
+        Q(is_approved=False) | Q(is_email_verified=False)
     ).order_by('-date_joined')
 
     all_users_data = []
@@ -163,6 +164,8 @@ def dashboard(request):
     users = User.objects.exclude(
         role='admin'
     ).order_by('-date_joined')
+
+    recent_registered_users = users[:10]
 
     for user in users:
 
@@ -217,6 +220,7 @@ def dashboard(request):
         'top_skill_counts': top_skill_counts,
 
         'pending_users': pending_users,
+        'recent_registered_users': recent_registered_users,
         'all_users_data': all_users_data,
     }
 
