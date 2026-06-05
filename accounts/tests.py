@@ -118,3 +118,70 @@ class RegistrationNotificationTests(TestCase):
             response.context['pending_registration_count'],
             1
         )
+
+    def test_registration_without_email_config_still_goes_to_otp_page(self):
+
+        response = self.client.post(
+            reverse('student_register'),
+            {
+                'username': 'otp_student',
+                'email': 'otp-student@example.com',
+                'phone_number': '0712345678',
+                'password1': 'Testpass12345',
+                'password2': 'Testpass12345',
+            }
+        )
+
+        user = User.objects.get(
+            username='otp_student'
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                'verify_otp',
+                args=[
+                    user.id
+                ]
+            )
+        )
+        self.assertTrue(user.otp_code)
+        self.assertFalse(user.is_email_verified)
+        self.assertFalse(user.is_approved)
+        self.assertFalse(user.is_active)
+
+    def test_otp_verification_waits_for_admin_approval(self):
+
+        user = User.objects.create_user(
+            username='approval_student',
+            email='approval-student@example.com',
+            password='Testpass12345',
+            role='student',
+            phone_number='0712345678',
+            is_active=False,
+            is_approved=False,
+            is_email_verified=False
+        )
+        otp = user.generate_otp()
+
+        response = self.client.post(
+            reverse(
+                'verify_otp',
+                args=[
+                    user.id
+                ]
+            ),
+            {
+                'otp_code': otp
+            }
+        )
+
+        user.refresh_from_db()
+
+        self.assertRedirects(
+            response,
+            reverse('pending_approval')
+        )
+        self.assertTrue(user.is_email_verified)
+        self.assertFalse(user.is_approved)
+        self.assertFalse(user.is_active)

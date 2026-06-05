@@ -435,7 +435,7 @@ def notify_admin_user_verified(request, user):
     role_label = user.role.title()
 
     dashboard_message = (
-        f'{role_label} account verified and activated: '
+        f'{role_label} account verified by OTP and awaiting admin approval: '
         f'{user.username} ({user.email}).'
     )
 
@@ -448,13 +448,13 @@ def notify_admin_user_verified(request, user):
         return False, 'No active email configuration found.'
 
     return send_system_email(
-        subject=f'{role_label} Verified and Activated',
+        subject=f'{role_label} Verified - Approval Required',
         message=(
-            f'{user.username} has entered the verification code successfully.\n\n'
+            f'{user.username} has entered the verification code successfully and is waiting for final admin approval.\n\n'
             f'Email: {user.email}\n'
             f'Phone: {user.phone_number}\n'
             f'Role: {role_label}\n\n'
-            f'The account has been activated automatically and the user can now access their dashboard.'
+            f'Open the admin dashboard and approve the account to activate access.'
         ),
         recipient_list=[
             config.admin_notification_email
@@ -501,10 +501,13 @@ def student_register(request):
 
                 messages.warning(
                     request,
-                    f'Account created, but the automatic email code was not delivered. Ask admin to configure email or resend the code from the dashboard. {otp_message}'
+                    f'Account created, but the automatic email code was not delivered. You can enter the OTP after admin resends it from the dashboard. {otp_message}'
                 )
 
-                return redirect('pending_approval')
+                return redirect(
+                    'verify_otp',
+                    user.id
+                )
 
             except IntegrityError:
 
@@ -563,10 +566,13 @@ def employer_register(request):
 
                 messages.warning(
                     request,
-                    f'Employer account created, but the automatic email code was not delivered. Ask admin to configure email or resend the code from the dashboard. {otp_message}'
+                    f'Employer account created, but the automatic email code was not delivered. You can enter the OTP after admin resends it from the dashboard. {otp_message}'
                 )
 
-                return redirect('pending_approval')
+                return redirect(
+                    'verify_otp',
+                    user.id
+                )
 
             except IntegrityError:
 
@@ -618,8 +624,8 @@ def verify_otp(request, user_id):
             elif entered_otp == user.otp_code:
 
                 user.is_email_verified = True
-                user.is_approved = True
-                user.is_active = True
+                user.is_approved = False
+                user.is_active = False
                 user.otp_code = None
                 user.otp_created_at = None
                 user.save()
@@ -631,16 +637,10 @@ def verify_otp(request, user_id):
 
                 messages.success(
                     request,
-                    'Verification successful. You are now signed in.'
+                    'Verification successful. Admin has been notified to approve your account.'
                 )
 
-                login(
-                    request,
-                    user,
-                    backend='django.contrib.auth.backends.ModelBackend'
-                )
-
-                return redirect('dashboard')
+                return redirect('pending_approval')
 
             else:
 
@@ -833,12 +833,14 @@ def approve_user(request, user_id):
     user.is_active = True
     user.save()
 
+    role_label = user.role.title()
+
     Notification.objects.create(
         user=user,
         message='Your account has been approved. You can now login and access your dashboard.'
     )
 
-    send_system_email(
+    user_email_success, user_email_message = send_system_email(
         subject='Account Approved',
         message=(
             f'Hello {user.username},\n\n'
@@ -855,9 +857,50 @@ def approve_user(request, user_id):
         )
     )
 
+    create_admin_notification(
+        f'{role_label} account approved by {request.user.username}: {user.username} ({user.email}).'
+    )
+
+    config = EmailConfiguration.objects.filter(
+        is_active=True
+    ).first()
+
+    admin_email_success = True
+    admin_email_message = 'No admin email configuration found.'
+
+    if config is not None:
+
+        admin_email_success, admin_email_message = send_system_email(
+            subject=f'{role_label} Account Approved',
+            message=(
+                f'{request.user.username} approved {user.username}.\n\n'
+                f'Email: {user.email}\n'
+                f'Phone: {user.phone_number}\n'
+                f'Role: {role_label}\n\n'
+                f'The account is now active.'
+            ),
+            recipient_list=[
+                config.admin_notification_email
+            ],
+            button_text='Open Admin Dashboard',
+            button_url=build_public_url('/dashboard/')
+        )
+
+    if not user_email_success or not admin_email_success:
+
+        messages.warning(
+            request,
+            (
+                f'{user.username} approved successfully, but one email notification failed. '
+                f'User email: {user_email_message} Admin email: {admin_email_message}'
+            )
+        )
+
+        return redirect('dashboard')
+
     messages.success(
         request,
-        f'{user.username} approved successfully. Email notification sent.'
+        f'{user.username} approved successfully. User and admin notifications sent.'
     )
 
     return redirect('dashboard')
