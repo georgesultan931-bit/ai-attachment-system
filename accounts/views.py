@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -285,15 +286,28 @@ def send_registration_sms_otp(user):
     )
 
 
-def notify_admin_new_registration(request, user):
+def get_admin_notification_users():
 
-    config = EmailConfiguration.objects.filter(
+    return User.objects.filter(
+        Q(role='admin') | Q(is_staff=True) | Q(is_superuser=True),
         is_active=True
-    ).first()
+    ).distinct()
 
-    if config is None:
 
-        return False, 'No active email configuration found.'
+def create_admin_notification(message):
+
+    admin_users = get_admin_notification_users()
+
+    for admin_user in admin_users:
+        Notification.objects.create(
+            user=admin_user,
+            message=message
+        )
+
+    return admin_users.count()
+
+
+def notify_admin_new_registration(request, user):
 
     role_label = user.role.title()
 
@@ -302,15 +316,26 @@ def notify_admin_new_registration(request, user):
         f'{user.username} ({user.email}).'
     )
 
-    admin_users = User.objects.filter(
-        role='admin',
-        is_active=True
+    notified_admins = create_admin_notification(
+        dashboard_message
     )
 
-    for admin_user in admin_users:
-        Notification.objects.create(
-            user=admin_user,
-            message=dashboard_message
+    if notified_admins == 0:
+
+        return (
+            False,
+            'No active admin account found to receive the dashboard notification.'
+        )
+
+    config = EmailConfiguration.objects.filter(
+        is_active=True
+    ).first()
+
+    if config is None:
+
+        return (
+            True,
+            'Dashboard notification created. No active email configuration found for email alert.'
         )
 
     email_code_url = build_absolute_url(
@@ -372,16 +397,9 @@ def notify_admin_user_verified(request, user):
         f'{user.username} ({user.email}).'
     )
 
-    admin_users = User.objects.filter(
-        role='admin',
-        is_active=True
+    create_admin_notification(
+        dashboard_message
     )
-
-    for admin_user in admin_users:
-        Notification.objects.create(
-            user=admin_user,
-            message=dashboard_message
-        )
 
     if config is None:
 
