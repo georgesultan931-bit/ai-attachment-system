@@ -19,8 +19,11 @@ from internships.models import (
     Application
 )
 
-from notifications.models import Notification, EmailConfiguration
-from notifications.email_service import send_system_email
+from notifications.models import Notification, EmailLog
+from notifications.email_service import (
+    get_active_email_config,
+    send_system_email
+)
 from notifications.sms_service import send_registration_otp_sms
 from notifications.whatsapp_service import send_registration_otp_whatsapp
 
@@ -130,6 +133,11 @@ def dashboard(request):
         '-applied_at'
     )[:10]
 
+    email_config = get_active_email_config()
+    recent_email_logs = EmailLog.objects.order_by(
+        '-created_at'
+    )[:8]
+
     all_required_skills = InternshipOpportunity.objects.values_list(
         'required_skills',
         flat=True
@@ -229,6 +237,13 @@ def dashboard(request):
 
         'placement_rate': placement_rate,
         'recent_applications': recent_applications,
+        'email_delivery_ready': email_config is not None,
+        'email_sender_label': getattr(
+            email_config,
+            'email_host_user',
+            ''
+        ) if email_config is not None else '',
+        'recent_email_logs': recent_email_logs,
 
         'top_skill_labels': top_skill_labels,
         'top_skill_counts': top_skill_counts,
@@ -395,9 +410,7 @@ def notify_admin_new_registration(request, user, otp_sent=False):
             'No active admin account found to receive the dashboard notification.'
         )
 
-    config = EmailConfiguration.objects.filter(
-        is_active=True
-    ).first()
+    config = get_active_email_config()
 
     if config is None:
 
@@ -428,9 +441,7 @@ def notify_admin_new_registration(request, user, otp_sent=False):
 
 def notify_admin_user_verified(request, user):
 
-    config = EmailConfiguration.objects.filter(
-        is_active=True
-    ).first()
+    config = get_active_email_config()
 
     role_label = user.role.title()
 
@@ -861,9 +872,7 @@ def approve_user(request, user_id):
         f'{role_label} account approved by {request.user.username}: {user.username} ({user.email}).'
     )
 
-    config = EmailConfiguration.objects.filter(
-        is_active=True
-    ).first()
+    config = get_active_email_config()
 
     admin_email_success = True
     admin_email_message = 'No admin email configuration found.'
