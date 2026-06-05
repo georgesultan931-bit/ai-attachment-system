@@ -21,6 +21,12 @@
                     Your registration has been received. If you already entered the OTP, admin will approve your account from the dashboard.
                 </p>
 
+                {% if not email_delivery_ready %}
+                    <div class="alert alert-warning text-start">
+                        Email delivery is not configured yet. Admin can resend your code through WhatsApp/SMS or configure email.
+                    </div>
+                {% endif %}
+
                 <a href="{% url 'home' %}"
                    class="btn btn-dark mt-3">
                     Back to Home

@@ -173,6 +173,16 @@ def send_system_email(
 
     if config is None:
 
+        for recipient in recipient_list:
+
+            EmailLog.objects.create(
+                recipient=recipient,
+                subject=subject,
+                message=message,
+                status='failed',
+                error_message='No active email configuration found.'
+            )
+
         return (
             False,
             'No active email configuration found.'

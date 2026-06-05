@@ -5,8 +5,12 @@ from django.test import RequestFactory
 from django.test import override_settings
 from django.urls import reverse
 
-from notifications.models import Notification
+from notifications.models import (
+    EmailLog,
+    Notification
+)
 from notifications.email_service import get_active_email_config
+from notifications.email_service import send_system_email
 
 from .models import User
 from .views import (
@@ -233,6 +237,30 @@ class RegistrationNotificationTests(TestCase):
         self.assertEqual(
             config.admin_notification_email,
             'admin@example.com'
+        )
+
+    def test_missing_email_config_creates_failed_email_log(self):
+
+        success, message = send_system_email(
+            subject='Missing Config Test',
+            message='Test body',
+            recipient_list=[
+                'student@example.com'
+            ]
+        )
+
+        self.assertFalse(success)
+        self.assertEqual(
+            message,
+            'No active email configuration found.'
+        )
+        self.assertTrue(
+            EmailLog.objects.filter(
+                recipient='student@example.com',
+                subject='Missing Config Test',
+                status='failed',
+                error_message='No active email configuration found.'
+            ).exists()
         )
 
     def test_otp_verification_waits_for_admin_approval(self):

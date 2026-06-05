@@ -669,7 +669,8 @@ def verify_otp(request, user_id):
         'accounts/verify_otp.html',
         {
             'form': form,
-            'user_obj': user
+            'user_obj': user,
+            'email_delivery_ready': get_active_email_config() is not None,
         }
     )
 
@@ -678,7 +679,10 @@ def pending_approval(request):
 
     return render(
         request,
-        'accounts/pending_approval.html'
+        'accounts/pending_approval.html',
+        {
+            'email_delivery_ready': get_active_email_config() is not None,
+        }
     )
 
 

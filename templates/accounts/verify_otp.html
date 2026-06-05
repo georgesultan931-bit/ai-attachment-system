@@ -18,6 +18,12 @@
                     Enter the 6-digit verification code sent through email, WhatsApp, or SMS. After verification, admin gives final approval.
                 </p>
 
+                {% if not email_delivery_ready %}
+                    <div class="alert alert-warning text-start">
+                        Email delivery is not configured yet. If you did not receive a code, admin must resend it through WhatsApp/SMS or configure email first.
+                    </div>
+                {% endif %}
+
                 <form method="post">
 
                     {% csrf_token %}
