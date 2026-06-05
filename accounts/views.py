@@ -69,6 +69,24 @@ def dashboard(request):
     total_employers = EmployerProfile.objects.count()
     total_opportunities = InternshipOpportunity.objects.count()
 
+    registered_accounts = User.objects.filter(
+        role__in=[
+            'student',
+            'employer'
+        ]
+    )
+
+    total_registered_accounts = registered_accounts.count()
+
+    pending_registration_count = registered_accounts.filter(
+        Q(is_approved=False) | Q(is_email_verified=False)
+    ).count()
+
+    verified_registration_count = registered_accounts.filter(
+        is_approved=True,
+        is_email_verified=True
+    ).count()
+
     open_opportunities = InternshipOpportunity.objects.filter(
         status='open'
     ).count()
@@ -150,20 +168,13 @@ def dashboard(request):
         for item in top_skills
     ]
 
-    pending_users = User.objects.filter(
-        role__in=[
-            'student',
-            'employer'
-        ],
-    ).filter(
+    pending_users = registered_accounts.filter(
         Q(is_approved=False) | Q(is_email_verified=False)
     ).order_by('-date_joined')
 
     all_users_data = []
 
-    users = User.objects.exclude(
-        role='admin'
-    ).order_by('-date_joined')
+    users = registered_accounts.order_by('-date_joined')
 
     recent_registered_users = users[:10]
 
@@ -202,6 +213,9 @@ def dashboard(request):
         'total_students': total_students,
         'total_employers': total_employers,
         'total_opportunities': total_opportunities,
+        'total_registered_accounts': total_registered_accounts,
+        'pending_registration_count': pending_registration_count,
+        'verified_registration_count': verified_registration_count,
 
         'open_opportunities': open_opportunities,
         'closed_opportunities': closed_opportunities,
@@ -487,7 +501,7 @@ def student_register(request):
 
                 messages.warning(
                     request,
-                    f'Account created, but the automatic email code was not delivered. Admin has been alerted. {otp_message}'
+                    f'Account created, but the automatic email code was not delivered. Ask admin to configure email or resend the code from the dashboard. {otp_message}'
                 )
 
                 return redirect('pending_approval')
@@ -549,7 +563,7 @@ def employer_register(request):
 
                 messages.warning(
                     request,
-                    f'Employer account created, but the automatic email code was not delivered. Admin has been alerted. {otp_message}'
+                    f'Employer account created, but the automatic email code was not delivered. Ask admin to configure email or resend the code from the dashboard. {otp_message}'
                 )
 
                 return redirect('pending_approval')

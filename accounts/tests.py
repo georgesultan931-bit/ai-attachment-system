@@ -110,3 +110,11 @@ class RegistrationNotificationTests(TestCase):
             user,
             list(response.context['recent_registered_users'])
         )
+        self.assertEqual(
+            response.context['total_registered_accounts'],
+            1
+        )
+        self.assertEqual(
+            response.context['pending_registration_count'],
+            1
+        )
