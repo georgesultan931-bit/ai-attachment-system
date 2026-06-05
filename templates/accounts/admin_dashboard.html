@@ -511,6 +511,7 @@
                         <th>Email</th>
                         <th>Role</th>
                         <th>Phone</th>
+                        <th>OTP Code</th>
                         <th>Email Verified</th>
                         <th>Action</th>
                     </tr>
@@ -538,6 +539,16 @@
                         </td>
 
                         <td>{{ user.phone_number }}</td>
+
+                        <td>
+                            {% if user.otp_code %}
+                                <span class="badge bg-dark rounded-pill px-3 py-2">
+                                    {{ user.otp_code }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">No code</span>
+                            {% endif %}
+                        </td>
 
                         <td>
                             {% if user.is_email_verified %}
@@ -591,7 +602,7 @@
                     {% empty %}
 
                     <tr>
-                        <td colspan="6" class="text-center text-muted">
+                        <td colspan="7" class="text-center text-muted">
                             No pending approvals.
                         </td>
                     </tr>
