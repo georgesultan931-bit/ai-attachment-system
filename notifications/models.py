@@ -204,3 +204,86 @@ class WhatsAppLog(models.Model):
 
     def __str__(self):
         return f'{self.recipient} - {self.status}'
+
+
+class SMSConfiguration(models.Model):
+
+    username = models.CharField(
+        max_length=100,
+        help_text='Africa\'s Talking username. Use sandbox for testing.'
+    )
+
+    api_key = models.TextField(
+        help_text='Africa\'s Talking API key.'
+    )
+
+    sender_id = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        help_text='Optional approved sender ID or shortcode.'
+    )
+
+    default_country_code = models.CharField(
+        max_length=5,
+        default='254',
+        help_text='Used when users enter local phone numbers, e.g. 254 for Kenya.'
+    )
+
+    is_active = models.BooleanField(
+        default=True
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
+
+    def save(self, *args, **kwargs):
+
+        if self.is_active:
+
+            SMSConfiguration.objects.exclude(
+                id=self.id
+            ).update(
+                is_active=False
+            )
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.username
+
+
+class SMSLog(models.Model):
+
+    STATUS_CHOICES = (
+        ('sent', 'Sent'),
+        ('failed', 'Failed'),
+    )
+
+    recipient = models.CharField(
+        max_length=30
+    )
+
+    message = models.TextField()
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES
+    )
+
+    response_message = models.TextField(
+        blank=True,
+        default=''
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+        return f'{self.recipient} - {self.status}'

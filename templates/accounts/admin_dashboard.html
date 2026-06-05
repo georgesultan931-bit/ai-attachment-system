@@ -350,10 +350,10 @@
                                         WhatsApp Code
                                     </a>
 
-                                    <a href="{% url 'send_user_verification_code_channel' user.id 'both' %}"
-                                       class="btn btn-primary">
-                                        <i class="bi bi-send-fill"></i>
-                                        Both
+                                    <a href="{% url 'send_user_verification_code_channel' user.id 'sms' %}"
+                                       class="btn btn-outline-dark">
+                                        <i class="bi bi-chat-dots-fill"></i>
+                                        SMS Code
                                     </a>
                                 </div>
                             {% endif %}

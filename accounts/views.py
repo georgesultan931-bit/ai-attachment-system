@@ -19,6 +19,7 @@ from internships.models import (
 
 from notifications.models import Notification, EmailConfiguration
 from notifications.email_service import send_system_email
+from notifications.sms_service import send_registration_otp_sms
 from notifications.whatsapp_service import send_registration_otp_whatsapp
 
 from .forms import (
@@ -276,6 +277,14 @@ def send_registration_whatsapp_otp(user):
     )
 
 
+def send_registration_sms_otp(user):
+
+    return send_registration_otp_sms(
+        user,
+        user.otp_code
+    )
+
+
 def notify_admin_new_registration(request, user):
 
     config = EmailConfiguration.objects.filter(
@@ -318,11 +327,11 @@ def notify_admin_new_registration(request, user):
         'whatsapp'
     )
 
-    both_code_url = build_absolute_url(
+    sms_code_url = build_absolute_url(
         request,
         'send_user_verification_code_channel',
         user.id,
-        'both'
+        'sms'
     )
 
     return send_system_email(
@@ -336,7 +345,7 @@ def notify_admin_new_registration(request, user):
             f'Admin actions:\n'
             f'Send code by email: {email_code_url}\n'
             f'Send code by WhatsApp: {whatsapp_code_url}\n'
-            f'Send code by both: {both_code_url}\n\n'
+            f'Send code by SMS: {sms_code_url}\n\n'
             f'After the user enters the verification code successfully, the system activates the account automatically.'
         ),
         recipient_list=[
@@ -570,7 +579,7 @@ def pending_approval(request):
 
 
 @login_required
-def send_user_verification_code(request, user_id, channel='both'):
+def send_user_verification_code(request, user_id, channel='email'):
 
     if request.user.role != 'admin':
 
@@ -603,7 +612,7 @@ def send_user_verification_code(request, user_id, channel='both'):
     valid_channels = [
         'email',
         'whatsapp',
-        'both',
+        'sms',
     ]
 
     if channel not in valid_channels:
@@ -621,7 +630,6 @@ def send_user_verification_code(request, user_id, channel='both'):
 
     if channel in [
         'email',
-        'both',
     ]:
 
         email_success, email_message = send_otp_email(
@@ -644,7 +652,6 @@ def send_user_verification_code(request, user_id, channel='both'):
 
     if channel in [
         'whatsapp',
-        'both',
     ]:
 
         whatsapp_success, whatsapp_message = send_registration_whatsapp_otp(user)
@@ -654,6 +661,19 @@ def send_user_verification_code(request, user_id, channel='both'):
         )
 
         if not whatsapp_success:
+            delivery_failed = True
+        else:
+            successful_deliveries += 1
+
+    if channel == 'sms':
+
+        sms_success, sms_message = send_registration_sms_otp(user)
+
+        delivery_results.append(
+            f'SMS: {sms_message}'
+        )
+
+        if not sms_success:
             delivery_failed = True
         else:
             successful_deliveries += 1

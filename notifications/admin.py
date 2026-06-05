@@ -6,6 +6,8 @@ from .models import (
     Notification,
     EmailConfiguration,
     EmailLog,
+    SMSConfiguration,
+    SMSLog,
     WhatsAppConfiguration,
     WhatsAppLog
 )
@@ -202,6 +204,65 @@ class WhatsAppLogAdmin(admin.ModelAdmin):
     readonly_fields = (
         'recipient',
         'template_name',
+        'message',
+        'status',
+        'response_message',
+        'created_at',
+    )
+
+    ordering = (
+        '-created_at',
+    )
+
+
+@admin.register(SMSConfiguration)
+class SMSConfigurationAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'username',
+        'sender_id',
+        'default_country_code',
+        'is_active',
+        'updated_at',
+    )
+
+    list_filter = (
+        'is_active',
+    )
+
+    search_fields = (
+        'username',
+        'sender_id',
+    )
+
+    readonly_fields = (
+        'created_at',
+        'updated_at',
+    )
+
+
+@admin.register(SMSLog)
+class SMSLogAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'recipient',
+        'status',
+        'created_at',
+    )
+
+    list_filter = (
+        'status',
+        'created_at',
+    )
+
+    search_fields = (
+        'recipient',
+        'message',
+        'response_message',
+    )
+
+    readonly_fields = (
+        'recipient',
         'message',
         'status',
         'response_message',
