@@ -598,3 +598,97 @@ class RegistrationNotificationTests(TestCase):
         self.assertTrue(user.is_approved)
         self.assertTrue(user.is_active)
         self.assertIsNone(user.otp_code)
+
+    def test_admin_can_reset_user_password_for_phone_and_laptop_login(self):
+
+        admin = User.objects.create_user(
+            username='reset_admin',
+            email='reset-admin@example.com',
+            password='Testpass12345',
+            role='admin',
+            is_active=True
+        )
+
+        user = User.objects.create_user(
+            username='reset_student',
+            email='reset-student@example.com',
+            password='Oldpass12345',
+            role='student',
+            phone_number='0712345678',
+            is_active=True,
+            is_approved=True,
+            is_email_verified=True
+        )
+
+        self.client.force_login(admin)
+
+        response = self.client.get(
+            reverse(
+                'admin_reset_user_password',
+                args=[
+                    user.id
+                ]
+            )
+        )
+
+        user.refresh_from_db()
+
+        self.assertRedirects(
+            response,
+            reverse('dashboard'),
+            fetch_redirect_response=False
+        )
+        self.assertTrue(
+            user.check_password('Testpass12345')
+        )
+
+    def test_admin_can_delete_only_old_pending_accounts(self):
+
+        admin = User.objects.create_user(
+            username='cleanup_admin',
+            email='cleanup-admin@example.com',
+            password='Testpass12345',
+            role='admin',
+            is_active=True
+        )
+
+        pending_user = User.objects.create_user(
+            username='old_pending_student',
+            email='old-pending-student@example.com',
+            password='Testpass12345',
+            role='student',
+            is_active=False,
+            is_approved=False,
+            is_email_verified=False
+        )
+
+        active_user = User.objects.create_user(
+            username='active_student',
+            email='active-student@example.com',
+            password='Testpass12345',
+            role='student',
+            is_active=True,
+            is_approved=True,
+            is_email_verified=True
+        )
+
+        self.client.force_login(admin)
+
+        response = self.client.get(
+            reverse('delete_old_pending_accounts')
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('dashboard'),
+            fetch_redirect_response=False
+        )
+        self.assertFalse(
+            User.objects.filter(id=pending_user.id).exists()
+        )
+        self.assertTrue(
+            User.objects.filter(id=active_user.id).exists()
+        )
+        self.assertTrue(
+            User.objects.filter(id=admin.id).exists()
+        )

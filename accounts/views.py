@@ -901,6 +901,76 @@ def admin_verify_user(request, user_id):
 
 
 @login_required
+def admin_reset_user_password(request, user_id):
+    if request.user.role != "admin" and not request.user.is_staff and not request.user.is_superuser:
+        messages.error(request, "Only administrators can reset user passwords.")
+        return redirect("dashboard")
+
+    user = get_object_or_404(
+        User,
+        id=user_id,
+        role__in=["student", "employer"],
+    )
+
+    temporary_password = "Testpass12345"
+    user.set_password(temporary_password)
+    user.save(update_fields=["password"])
+
+    Notification.objects.create(
+        user=user,
+        message=(
+            "Your password was reset by admin. "
+            "Use the temporary password and change it after login."
+        ),
+    )
+
+    send_system_email(
+        subject="Password Reset by Admin",
+        message=(
+            f"Hello {user.username},\n\n"
+            f"Your password was reset by admin.\n\n"
+            f"Temporary password: {temporary_password}\n\n"
+            f"Use this password to log in on phone or laptop, then update it after login.\n\n"
+            f"AI Internship & Attachment Matching System"
+        ),
+        recipient_list=[user.email],
+        button_text="Login",
+        button_url=build_public_url(reverse("login")),
+    )
+
+    messages.success(
+        request,
+        f"{user.username}'s password was reset to {temporary_password}. "
+        f"Use the same password on phone and laptop.",
+    )
+    return redirect("dashboard")
+
+
+@login_required
+def delete_old_pending_accounts(request):
+    if request.user.role != "admin" and not request.user.is_staff and not request.user.is_superuser:
+        messages.error(request, "Only administrators can delete old accounts.")
+        return redirect("dashboard")
+
+    old_accounts = User.objects.filter(
+        role__in=["student", "employer"]
+    ).filter(
+        Q(is_active=False)
+        | Q(is_email_verified=False)
+        | Q(is_approved=False)
+    )
+
+    deleted_count = old_accounts.count()
+    old_accounts.delete()
+
+    messages.success(
+        request,
+        f"Deleted {deleted_count} old pending/unverified student and employer accounts. Admin accounts were not touched.",
+    )
+    return redirect("dashboard")
+
+
+@login_required
 def approve_user(request, user_id):
     if request.user.role != "admin":
         messages.error(request, "Only administrators can approve users.")

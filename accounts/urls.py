@@ -86,6 +86,12 @@ urlpatterns = [
     ),
 
     path(
+        'admin-reset-user-password/<int:user_id>/',
+        views.admin_reset_user_password,
+        name='admin_reset_user_password'
+    ),
+
+    path(
         'reject-user/<int:user_id>/',
         views.reject_user,
         name='reject_user'
@@ -101,6 +107,12 @@ urlpatterns = [
         'delete-user/<int:user_id>/',
         views.delete_user_account,
         name='delete_user_account'
+    ),
+
+    path(
+        'delete-old-pending-accounts/',
+        views.delete_old_pending_accounts,
+        name='delete_old_pending_accounts'
     ),
     
 path('create-student-profile/', views.create_student_profile, name='create_student_profile'),

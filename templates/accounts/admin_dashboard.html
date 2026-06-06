@@ -194,6 +194,12 @@
                                     Verify
                                 </a>
                             {% endif %}
+                            <a href="{% url 'admin_reset_user_password' user.id %}"
+                               class="btn btn-outline-dark btn-sm"
+                               onclick="return confirm('Reset {{ user.username }} password to Testpass12345?');">
+                                <i class="bi bi-key-fill"></i>
+                                Reset Password
+                            </a>
                         </td>
                     </tr>
 
@@ -676,6 +682,13 @@
                                     Verify
                                 </a>
 
+                                <a href="{% url 'admin_reset_user_password' user.id %}"
+                                   class="btn btn-outline-dark btn-sm mb-2"
+                                   onclick="return confirm('Reset {{ user.username }} password to Testpass12345?');">
+                                    <i class="bi bi-key-fill"></i>
+                                    Reset Password
+                                </a>
+
                                 <div class="btn-group btn-group-sm" role="group">
                                     <a href="{% url 'send_user_verification_code_channel' user.id 'email' %}"
                                        class="btn btn-outline-primary">
@@ -743,9 +756,18 @@
                 </small>
             </div>
 
-            <span class="badge bg-danger rounded-pill px-3 py-2">
-                Admin Only
-            </span>
+            <div class="d-flex gap-2 align-items-center">
+                <span class="badge bg-danger rounded-pill px-3 py-2">
+                    Admin Only
+                </span>
+
+                <a href="{% url 'delete_old_pending_accounts' %}"
+                   class="btn btn-outline-danger btn-sm"
+                   onclick="return confirm('Delete all old pending/unverified student and employer accounts? Admin accounts will not be touched.');">
+                    <i class="bi bi-trash-fill"></i>
+                    Clear Old Pending Accounts
+                </a>
+            </div>
 
         </div>
 
