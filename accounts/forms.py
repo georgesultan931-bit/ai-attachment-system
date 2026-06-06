@@ -79,6 +79,7 @@ class CustomLoginForm(AuthenticationForm):
                 'class': 'form-control',
                 'placeholder': 'Enter username or email',
                 'autocapitalize': 'none',
+                'autocorrect': 'off',
                 'autocomplete': 'username',
                 'spellcheck': 'false',
             }
@@ -92,6 +93,7 @@ class CustomLoginForm(AuthenticationForm):
                 'placeholder': 'Enter password',
                 'autocomplete': 'current-password',
                 'autocapitalize': 'none',
+                'autocorrect': 'off',
                 'spellcheck': 'false',
             }
         )
@@ -166,6 +168,7 @@ class StudentRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
                 'class': 'form-control',
                 'placeholder': 'Enter your email address',
                 'autocapitalize': 'none',
+                'autocorrect': 'off',
                 'autocomplete': 'email',
                 'spellcheck': 'false',
             }
@@ -178,8 +181,11 @@ class StudentRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
             attrs={
                 'class': 'form-control',
                 'placeholder': 'Enter your phone number',
+                'autocapitalize': 'none',
+                'autocorrect': 'off',
                 'autocomplete': 'tel',
                 'inputmode': 'tel',
+                'spellcheck': 'false',
             }
         )
     )
@@ -204,6 +210,7 @@ class StudentRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
             'class': 'form-control',
             'placeholder': 'Choose username',
             'autocapitalize': 'none',
+            'autocorrect': 'off',
             'autocomplete': 'username',
             'spellcheck': 'false',
         })
@@ -212,6 +219,7 @@ class StudentRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
             'class': 'form-control',
             'placeholder': 'Create password',
             'autocapitalize': 'none',
+            'autocorrect': 'off',
             'autocomplete': 'new-password',
             'spellcheck': 'false',
         })
@@ -220,6 +228,7 @@ class StudentRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
             'class': 'form-control',
             'placeholder': 'Confirm password',
             'autocapitalize': 'none',
+            'autocorrect': 'off',
             'autocomplete': 'new-password',
             'spellcheck': 'false',
         })
@@ -270,6 +279,7 @@ class EmployerRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
                 'class': 'form-control',
                 'placeholder': 'Enter company email address',
                 'autocapitalize': 'none',
+                'autocorrect': 'off',
                 'autocomplete': 'email',
                 'spellcheck': 'false',
             }
@@ -282,8 +292,11 @@ class EmployerRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
             attrs={
                 'class': 'form-control',
                 'placeholder': 'Enter company phone number',
+                'autocapitalize': 'none',
+                'autocorrect': 'off',
                 'autocomplete': 'tel',
                 'inputmode': 'tel',
+                'spellcheck': 'false',
             }
         )
     )
@@ -308,6 +321,7 @@ class EmployerRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
             'class': 'form-control',
             'placeholder': 'Choose employer username',
             'autocapitalize': 'none',
+            'autocorrect': 'off',
             'autocomplete': 'username',
             'spellcheck': 'false',
         })
@@ -316,6 +330,7 @@ class EmployerRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
             'class': 'form-control',
             'placeholder': 'Create password',
             'autocapitalize': 'none',
+            'autocorrect': 'off',
             'autocomplete': 'new-password',
             'spellcheck': 'false',
         })
@@ -324,6 +339,7 @@ class EmployerRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
             'class': 'form-control',
             'placeholder': 'Confirm password',
             'autocapitalize': 'none',
+            'autocorrect': 'off',
             'autocomplete': 'new-password',
             'spellcheck': 'false',
         })
@@ -375,9 +391,12 @@ class OTPVerificationForm(forms.Form):
             attrs={
                 'class': 'form-control',
                 'placeholder': 'Enter 6-digit OTP',
+                'autocapitalize': 'none',
+                'autocorrect': 'off',
                 'autocomplete': 'one-time-code',
                 'inputmode': 'numeric',
                 'pattern': '[0-9]*',
+                'spellcheck': 'false',
             }
         )
     )

@@ -18,6 +18,12 @@ from .auth_flow import (
     clean_login_value,
     dashboard_redirect_name,
 )
+from .forms import (
+    CustomLoginForm,
+    EmployerRegistrationForm,
+    OTPVerificationForm,
+    StudentRegistrationForm,
+)
 from .views import (
     build_absolute_url,
     notify_admin_new_registration
@@ -76,6 +82,35 @@ class RegistrationNotificationTests(TestCase):
             dashboard_redirect_name(user),
             'create_student_profile'
         )
+
+    def test_phone_input_attributes_are_mobile_safe(self):
+
+        forms_and_fields = [
+            (CustomLoginForm(), ['username', 'password']),
+            (StudentRegistrationForm(), ['username', 'email', 'phone_number', 'password1', 'password2']),
+            (EmployerRegistrationForm(), ['username', 'email', 'phone_number', 'password1', 'password2']),
+            (OTPVerificationForm(), ['otp_code']),
+        ]
+
+        for form, field_names in forms_and_fields:
+            for field_name in field_names:
+                attrs = form.fields[field_name].widget.attrs
+
+                self.assertEqual(
+                    attrs.get('autocapitalize'),
+                    'none',
+                    f'{form.__class__.__name__}.{field_name} must not autocapitalize on phone.'
+                )
+                self.assertEqual(
+                    attrs.get('autocorrect'),
+                    'off',
+                    f'{form.__class__.__name__}.{field_name} must not autocorrect on phone.'
+                )
+                self.assertEqual(
+                    attrs.get('spellcheck'),
+                    'false',
+                    f'{form.__class__.__name__}.{field_name} must not spellcheck on phone.'
+                )
 
     def test_registration_creates_admin_notification_without_email_config(self):
 
