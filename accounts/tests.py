@@ -13,6 +13,11 @@ from notifications.email_service import get_active_email_config
 from notifications.email_service import send_system_email
 
 from .models import User
+from .auth_flow import (
+    authenticate_identifier,
+    clean_login_value,
+    dashboard_redirect_name,
+)
 from .views import (
     build_absolute_url,
     notify_admin_new_registration
@@ -20,6 +25,57 @@ from .views import (
 
 
 class RegistrationNotificationTests(TestCase):
+
+    def test_clean_login_value_removes_phone_keyboard_noise(self):
+
+        self.assertEqual(
+            clean_login_value(' \ufeffPy\u200bthon '),
+            'Python'
+        )
+
+    def test_authenticate_identifier_accepts_inactive_otp_user(self):
+
+        user = User.objects.create_user(
+            username='python',
+            email='python-user@example.com',
+            password='Testpass12345',
+            role='student',
+            is_active=False,
+            is_approved=False,
+            is_email_verified=False
+        )
+
+        response = authenticate_identifier(
+            None,
+            ' Python ',
+            ' Testpass12345 '
+        )
+
+        self.assertEqual(
+            response.user,
+            user
+        )
+        self.assertEqual(
+            response.reason,
+            'inactive_or_unverified'
+        )
+
+    def test_dashboard_redirect_sends_profileless_student_to_profile(self):
+
+        user = User.objects.create_user(
+            username='profileless',
+            email='profileless@example.com',
+            password='Testpass12345',
+            role='student',
+            is_active=True,
+            is_approved=True,
+            is_email_verified=True
+        )
+
+        self.assertEqual(
+            dashboard_redirect_name(user),
+            'create_student_profile'
+        )
 
     def test_registration_creates_admin_notification_without_email_config(self):
 

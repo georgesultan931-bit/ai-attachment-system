@@ -6,7 +6,7 @@ import json
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login, logout, authenticate, get_user_model
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.db import IntegrityError
@@ -42,11 +42,13 @@ from .forms import (
     EmployerRegistrationForm,
     OTPVerificationForm,
 )
+from .auth_flow import (
+    authenticate_identifier,
+    clean_login_value,
+    dashboard_redirect_name,
+)
 
 from .models import User
-
-
-UserModel = get_user_model()
 
 
 def is_mobile_device(request):
@@ -64,87 +66,6 @@ def is_mobile_device(request):
         "windows phone",
     ]
     return any(keyword in user_agent for keyword in mobile_keywords)
-
-
-def clean_login_identifier(value):
-    """
-    Cleans username/email coming from mobile keyboards.
-    Fixes:
-    - leading/trailing spaces
-    - accidental invisible spaces
-    - copied text issues
-    """
-    if value is None:
-        return ""
-
-    return (
-        str(value)
-        .strip()
-        .replace("\u200b", "")
-        .replace("\u200c", "")
-        .replace("\u200d", "")
-        .replace("\ufeff", "")
-    )
-
-
-def get_auth_username_from_identifier(identifier):
-    """
-    Allows login using username OR email.
-    Also makes username/email lookup case-insensitive.
-
-    Django authenticate() normally expects the real username.
-    So if the user typed email, we find the user first,
-    then authenticate using the actual username.
-    """
-    identifier = clean_login_identifier(identifier)
-
-    if not identifier:
-        return ""
-
-    user_obj = None
-
-    if "@" in identifier:
-        user_obj = UserModel.objects.filter(email__iexact=identifier).first()
-    else:
-        user_obj = UserModel.objects.filter(username__iexact=identifier).first()
-
-    if user_obj:
-        return user_obj.get_username()
-
-    return identifier
-
-
-def get_user_from_login_identifier(identifier):
-    """
-    Finds the user typed on the login form before Django's active-user
-    authentication check runs.
-    """
-    identifier = clean_login_identifier(identifier)
-
-    if not identifier:
-        return None
-
-    if "@" in identifier:
-        return UserModel.objects.filter(email__iexact=identifier).first()
-
-    return UserModel.objects.filter(username__iexact=identifier).first()
-
-
-def get_dashboard_redirect_name(user):
-    """
-    Sends users to the correct place after login.
-    """
-    if user.role == "student":
-        if not hasattr(user, "student_profile"):
-            return "create_student_profile"
-        return "student_dashboard"
-
-    if user.role == "employer":
-        if not hasattr(user, "employer_profile"):
-            return "create_employer_profile"
-        return "employer_profile"
-
-    return "dashboard"
 
 
 def home(request):
@@ -197,9 +118,8 @@ def user_login(request):
             raw_identifier = request.POST.get("username", "")
             password = request.POST.get("password", "")
 
-        identifier = clean_login_identifier(raw_identifier)
-        password = clean_login_identifier(password)
-        auth_username = get_auth_username_from_identifier(identifier)
+        identifier = clean_login_value(raw_identifier)
+        password = clean_login_value(password)
 
         if not identifier or not password:
             error_message = "Username/email and password are required."
@@ -218,15 +138,8 @@ def user_login(request):
                 },
             )
 
-        login_user = get_user_from_login_identifier(identifier)
-        user = authenticate(
-            request,
-            username=auth_username,
-            password=password,
-        )
-
-        if login_user is not None and user is None and login_user.check_password(password):
-            user = login_user
+        login_result = authenticate_identifier(request, identifier, password)
+        user = login_result.user
 
         if user is not None:
             if not getattr(user, "is_email_verified", False):
@@ -271,7 +184,7 @@ def user_login(request):
             next_url = request.POST.get("next") or request.GET.get("next")
 
             if not next_url:
-                next_url = get_dashboard_redirect_name(user)
+                next_url = dashboard_redirect_name(user)
 
             if is_json_request:
                 try:
