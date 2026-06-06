@@ -80,24 +80,24 @@
         <h2>Registration Under Review</h2>
         
         <div class="message">
-            Your registration has been received and is pending verification.
+            Your registration has been received. Open the verification email to continue.
         </div>
         
         {% if not email_delivery_ready %}
             <div class="warning-box">
-                <strong>⚠️ Email Configuration Notice</strong><br>
-                The email system is not fully configured. Please contact the administrator 
-                to complete your verification and activate your account.
+                <strong>Email Configuration Notice</strong><br>
+                The email system is not fully configured. Admin can still approve your account 
+                from the dashboard, then you can log in and create your profile.
             </div>
         {% else %}
             <div class="warning-box">
-                <strong>📧 Check Your Email</strong><br>
-                A verification code has been sent to your email address. 
-                Please check your inbox (and spam folder) and enter the code to verify your account.
+                <strong>Check Your Email</strong><br>
+                We sent a verification link to your email address. Press the link to verify your account 
+                and go straight to your profile form.
             </div>
         {% endif %}
         
-        <a href="{% url 'home' %}" class="button">← Back to Home</a>
+        <a href="{% url 'home' %}" class="button">Back to Home</a>
     </div>
 </body>
 </html>

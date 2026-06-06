@@ -56,6 +56,12 @@ urlpatterns = [
     ),
 
     path(
+        'verify-registration/<str:token>/',
+        views.verify_registration_email,
+        name='verify_registration_email'
+    ),
+
+    path(
         'pending-approval/',
         views.pending_approval,
         name='pending_approval'

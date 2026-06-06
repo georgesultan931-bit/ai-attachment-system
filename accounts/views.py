@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
+from django.core import signing
 from django.db import IntegrityError
 from django.db.models import Q
 from django.http import JsonResponse
@@ -49,6 +50,10 @@ from .auth_flow import (
 )
 
 from .models import User
+
+
+REGISTRATION_VERIFY_SALT = "accounts.registration.verify"
+REGISTRATION_VERIFY_MAX_AGE = 60 * 60 * 24 * 7
 
 
 def is_mobile_device(request):
@@ -142,38 +147,25 @@ def user_login(request):
         user = login_result.user
 
         if user is not None:
-            if not getattr(user, "is_email_verified", False):
-                request.session["pending_verification_user_id"] = user.id
+            if (
+                not getattr(user, "is_email_verified", False)
+                or not getattr(user, "is_approved", False)
+                or not user.is_active
+            ):
+                request.session["pending_approval_user_id"] = user.id
                 request.session.save()
 
                 if is_json_request:
                     return JsonResponse(
                         {
-                            "error": "Please verify your email first. Check your inbox for the OTP code.",
-                            "redirect_url": reverse("verify_otp", args=[user.id]),
+                            "error": "Your registration is waiting for admin approval.",
+                            "redirect_url": reverse("pending_approval"),
                         },
                         status=403,
                     )
 
-                messages.warning(request, "Please verify your email first. Check your inbox for the OTP code.")
-                return redirect("verify_otp", user.id)
-
-            if not user.is_active:
-                error_message = "Account is inactive. Please contact admin."
-
-                if is_json_request:
-                    return JsonResponse({"error": error_message}, status=403)
-
-                messages.error(request, error_message)
-                return render(
-                    request,
-                    "accounts/login.html",
-                    {
-                        "form": AuthenticationForm(),
-                        "site_key": getattr(settings, "RECAPTCHA_SITE_KEY", None),
-                        "mobile_device": mobile_device,
-                    },
-                )
+                messages.warning(request, "Your registration is waiting for admin approval.")
+                return redirect("pending_approval")
 
             login(request, user, backend="django.contrib.auth.backends.ModelBackend")
 
@@ -427,6 +419,36 @@ def send_registration_sms_otp(user):
     return send_registration_otp_sms(user, user.otp_code)
 
 
+def send_registration_received_notification(user):
+    token = signing.dumps(
+        {
+            "user_id": user.id,
+        },
+        salt=REGISTRATION_VERIFY_SALT,
+    )
+
+    return send_system_email(
+        subject="Verify Your Registration",
+        message=(
+            f"Hello {user.username},\n\n"
+            f"Your registration has been received by AI Internship & Attachment Matching System.\n\n"
+            f"Press the verification button below to activate your account and continue to your profile.\n\n"
+            f"This verification link expires in 7 days.\n\n"
+            f"AI Internship & Attachment Matching System"
+        ),
+        recipient_list=[user.email],
+        button_text="Verify and Create Profile",
+        button_url=build_public_url(
+            reverse(
+                "verify_registration_email",
+                args=[
+                    token,
+                ],
+            )
+        ),
+    )
+
+
 def get_admin_notification_users():
     return User.objects.filter(
         Q(role="admin") | Q(is_staff=True) | Q(is_superuser=True),
@@ -443,30 +465,23 @@ def create_admin_notification(message):
     return admin_users.count()
 
 
-def notify_admin_new_registration(request, user, otp_sent=False):
+def notify_admin_new_registration(request, user, user_notified=False):
     role_label = user.role.title()
-    otp_label = user.otp_code or "No OTP generated"
 
-    if otp_sent:
+    if user_notified:
         dashboard_message = (
-            f"New {role_label.lower()} registration created. Automatic OTP sent; awaiting user verification: "
-            f"{user.username} ({user.email}). OTP: {otp_label}."
+            f"New {role_label.lower()} registration created: "
+            f"{user.username} ({user.email}). Verification email sent."
         )
-        admin_instruction = "The system has sent the first email verification code automatically."
-        resend_instruction = (
-            "Open the admin dashboard to monitor verification. "
-            "Use Email Code, WhatsApp Code, or SMS Code only if the user needs a new code."
-        )
+        admin_instruction = "The system sent the user a verification email link."
     else:
         dashboard_message = (
-            f"New {role_label.lower()} registration created, but automatic OTP delivery needs admin attention: "
-            f"{user.username} ({user.email}). OTP: {otp_label}."
+            f"New {role_label.lower()} registration created: "
+            f"{user.username} ({user.email}). Verification email delivery needs admin attention."
         )
         admin_instruction = (
-            "The system tried to send the first verification code automatically, "
-            "but delivery was not confirmed."
+            "The system created the account, but the verification email delivery was not confirmed."
         )
-        resend_instruction = "Open the admin dashboard and resend the code by Email, WhatsApp, or SMS."
 
     notified_admins = create_admin_notification(dashboard_message)
 
@@ -479,18 +494,16 @@ def notify_admin_new_registration(request, user, otp_sent=False):
         return True, "Dashboard notification created. No active email configuration found for email alert."
 
     return send_system_email(
-        subject=f"New {role_label} Registration - Verification Required",
+        subject=f"New {role_label} Registration",
         message=(
             f"A new {role_label.lower()} has registered. {admin_instruction}\n\n"
             f"Username: {user.username}\n"
             f"Email: {user.email}\n"
             f"Phone: {user.phone_number}\n"
-            f"OTP: {otp_label}\n"
             f"Role: {role_label}\n\n"
             f"Admin action:\n"
-            f"{resend_instruction}\n\n"
-            f"After the user enters the verification code successfully, "
-            f"the system activates the account automatically."
+            f"Open the admin dashboard to monitor the registration or approve it manually.\n\n"
+            f"After the user presses the email verification link, the account opens the profile form."
         ),
         recipient_list=[config.admin_notification_email],
         button_text="Open Admin Dashboard",
@@ -554,22 +567,21 @@ def student_register(request):
             try:
                 user = form.save()
 
-                otp_success, otp_message = send_otp_email(request, user)
-                notify_admin_new_registration(request, user, otp_success)
+                notice_success, notice_message = send_registration_received_notification(user)
+                notify_admin_new_registration(request, user, notice_success)
 
-                if otp_success:
+                if notice_success:
                     messages.success(
                         request,
-                        "Account created. A verification code has been sent to your email.",
+                        "Account created. We sent you a verification email. Open it to continue to your profile.",
                     )
                 else:
                     messages.warning(
                         request,
-                        "Account created, but the verification code could not be sent. "
-                        "Admin has been notified. You can enter the code here after admin resends it.",
+                        "Account created. Admin has been notified, but the verification email could not be sent.",
                     )
 
-                return redirect("verify_otp", user.id)
+                return redirect("pending_approval")
 
             except IntegrityError:
                 messages.error(
@@ -599,22 +611,21 @@ def employer_register(request):
             try:
                 user = form.save()
 
-                otp_success, otp_message = send_otp_email(request, user)
-                notify_admin_new_registration(request, user, otp_success)
+                notice_success, notice_message = send_registration_received_notification(user)
+                notify_admin_new_registration(request, user, notice_success)
 
-                if otp_success:
+                if notice_success:
                     messages.success(
                         request,
-                        "Employer account created. A verification code has been sent to your email.",
+                        "Employer account created. We sent you a verification email. Open it to continue to your profile.",
                     )
                 else:
                     messages.warning(
                         request,
-                        "Employer account created, but the verification code could not be sent. "
-                        "Admin has been notified. You can enter the code here after admin resends it.",
+                        "Employer account created. Admin has been notified, but the verification email could not be sent.",
                     )
 
-                return redirect("verify_otp", user.id)
+                return redirect("pending_approval")
 
             except IntegrityError:
                 messages.error(
@@ -694,6 +705,46 @@ def verify_otp(request, user_id):
             "mobile_device": mobile_device,
         },
     )
+
+
+def verify_registration_email(request, token):
+    try:
+        payload = signing.loads(
+            token,
+            salt=REGISTRATION_VERIFY_SALT,
+            max_age=REGISTRATION_VERIFY_MAX_AGE,
+        )
+    except signing.SignatureExpired:
+        messages.error(request, "This verification link has expired. Please contact admin for help.")
+        return redirect("login")
+    except signing.BadSignature:
+        messages.error(request, "This verification link is invalid.")
+        return redirect("login")
+
+    user = get_object_or_404(
+        User,
+        id=payload.get("user_id"),
+    )
+
+    activate_verified_user(user)
+
+    notify_admin_user_verified(request, user)
+
+    login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+
+    request.session.set_expiry(1209600)
+    request.session.modified = True
+    request.session.save()
+
+    messages.success(request, "Email verified successfully. Please complete your profile.")
+
+    if user.role == "student":
+        return redirect("create_student_profile")
+
+    if user.role == "employer":
+        return redirect("create_employer_profile")
+
+    return redirect("dashboard")
 
 
 @login_required
@@ -978,17 +1029,7 @@ def approve_user(request, user_id):
 
     user = get_object_or_404(User, id=user_id)
 
-    if not user.is_email_verified:
-        messages.error(
-            request,
-            "This user must enter the admin-generated verification code. "
-            "Successful verification activates the account automatically.",
-        )
-        return redirect("dashboard")
-
-    user.is_approved = True
-    user.is_active = True
-    user.save()
+    activate_verified_user(user)
 
     role_label = user.role.title()
 

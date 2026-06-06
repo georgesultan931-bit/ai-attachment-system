@@ -5,6 +5,7 @@ from django.test import RequestFactory
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
+from django.core import signing
 
 from notifications.models import (
     EmailLog,
@@ -27,7 +28,8 @@ from .forms import (
 )
 from .views import (
     build_absolute_url,
-    notify_admin_new_registration
+    notify_admin_new_registration,
+    REGISTRATION_VERIFY_SALT
 )
 
 
@@ -222,7 +224,7 @@ class RegistrationNotificationTests(TestCase):
             1
         )
 
-    def test_registration_without_email_config_still_goes_to_otp_page(self):
+    def test_registration_without_email_config_goes_to_pending_approval(self):
 
         admin = User.objects.create_user(
             username='registration_admin',
@@ -249,21 +251,16 @@ class RegistrationNotificationTests(TestCase):
 
         self.assertRedirects(
             response,
-            reverse(
-                'verify_otp',
-                args=[
-                    user.id
-                ]
-            )
+            reverse('pending_approval')
         )
-        self.assertTrue(user.otp_code)
+        self.assertIsNone(user.otp_code)
         self.assertFalse(user.is_email_verified)
         self.assertFalse(user.is_approved)
         self.assertFalse(user.is_active)
         self.assertTrue(
             EmailLog.objects.filter(
                 recipient='otp-student@example.com',
-                subject='Verify Your Email Address',
+                subject='Verify Your Registration',
                 status='failed',
                 error_message='No active email configuration found.'
             ).exists()
@@ -271,9 +268,50 @@ class RegistrationNotificationTests(TestCase):
         self.assertTrue(
             Notification.objects.filter(
                 user=admin,
-                message__contains=user.otp_code
+                message__contains='Verification email'
             ).exists()
         )
+
+    def test_registration_email_link_verifies_and_opens_profile(self):
+
+        user = User.objects.create_user(
+            username='email_link_student',
+            email='email-link-student@example.com',
+            password='Testpass12345',
+            role='student',
+            phone_number='0712345678',
+            is_active=False,
+            is_approved=False,
+            is_email_verified=False
+        )
+
+        token = signing.dumps(
+            {
+                'user_id': user.id
+            },
+            salt=REGISTRATION_VERIFY_SALT
+        )
+
+        response = self.client.get(
+            reverse(
+                'verify_registration_email',
+                args=[
+                    token
+                ]
+            )
+        )
+
+        user.refresh_from_db()
+
+        self.assertRedirects(
+            response,
+            reverse('create_student_profile'),
+            fetch_redirect_response=False
+        )
+        self.assertTrue(user.is_email_verified)
+        self.assertTrue(user.is_approved)
+        self.assertTrue(user.is_active)
+        self.assertIsNone(user.otp_code)
 
     def test_login_accepts_email_and_trims_phone_keyboard_spaces(self):
 
@@ -320,12 +358,7 @@ class RegistrationNotificationTests(TestCase):
 
         self.assertRedirects(
             response,
-            reverse(
-                'verify_otp',
-                args=[
-                    user.id
-                ]
-            )
+            reverse('pending_approval')
         )
         self.assertEqual(
             user.email,
@@ -362,7 +395,7 @@ class RegistrationNotificationTests(TestCase):
             fetch_redirect_response=False
         )
 
-    def test_unverified_inactive_user_login_redirects_to_otp(self):
+    def test_unapproved_inactive_user_login_redirects_to_pending_approval(self):
 
         user = User.objects.create_user(
             username='python',
@@ -374,7 +407,6 @@ class RegistrationNotificationTests(TestCase):
             is_approved=False,
             is_email_verified=False
         )
-        user.generate_otp()
 
         response = self.client.post(
             reverse('login'),
@@ -386,12 +418,7 @@ class RegistrationNotificationTests(TestCase):
 
         self.assertRedirects(
             response,
-            reverse(
-                'verify_otp',
-                args=[
-                    user.id
-                ]
-            ),
+            reverse('pending_approval'),
             fetch_redirect_response=False
         )
 

@@ -124,11 +124,11 @@
 
             <div>
                 <h4 class="fw-bold mb-1">
-                    Latest Registration OTPs
+                    Latest Registrations
                 </h4>
 
                 <small class="text-muted">
-                    New users waiting for verification, shown with their current OTP code.
+                    New users waiting for admin approval.
                 </small>
             </div>
 
@@ -148,7 +148,7 @@
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Role</th>
-                        <th>OTP Code</th>
+                        <th>Approval</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -164,34 +164,26 @@
                         <td>{{ user.phone_number|default:"-" }}</td>
                         <td>{{ user.get_role_display }}</td>
                         <td>
-                            {% if user.otp_code %}
-                                <span class="badge bg-dark rounded-pill px-3 py-2">
-                                    {{ user.otp_code }}
-                                </span>
-                            {% else %}
-                                <span class="badge bg-secondary rounded-pill">
-                                    No code
-                                </span>
-                            {% endif %}
+                            <span class="badge bg-info text-dark rounded-pill">
+                                No OTP required
+                            </span>
                         </td>
                         <td>
                             {% if user.is_email_verified and user.is_approved and user.is_active %}
                                 <span class="badge bg-success rounded-pill">Active</span>
-                            {% elif user.otp_code %}
-                                <span class="badge bg-warning text-dark rounded-pill">Waiting OTP</span>
                             {% else %}
-                                <span class="badge bg-danger rounded-pill">Needs Resend</span>
+                                <span class="badge bg-warning text-dark rounded-pill">Pending Approval</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if user.is_email_verified and user.is_approved and user.is_active %}
-                                <span class="text-muted">Verified</span>
+                                <span class="text-muted">Approved</span>
                             {% else %}
-                                <a href="{% url 'admin_verify_user' user.id %}"
+                                <a href="{% url 'approve_user' user.id %}"
                                    class="btn btn-success btn-sm"
-                                   onclick="return confirm('Verify and activate {{ user.username }} now?');">
+                                   onclick="return confirm('Approve and activate {{ user.username }} now?');">
                                     <i class="bi bi-check-circle-fill"></i>
-                                    Verify
+                                    Approve
                                 </a>
                             {% endif %}
                             <a href="{% url 'admin_reset_user_password' user.id %}"
@@ -207,7 +199,7 @@
 
                     <tr>
                         <td colspan="7" class="text-center text-muted">
-                            No pending registration OTPs yet.
+                            No pending registrations yet.
                         </td>
                     </tr>
 
@@ -597,7 +589,7 @@
                 </h4>
 
                 <small class="text-muted">
-                    Registered users waiting for OTP verification
+                    Registered users waiting for admin approval
                 </small>
             </div>
 
@@ -618,8 +610,8 @@
                         <th>Email</th>
                         <th>Role</th>
                         <th>Phone</th>
-                        <th>OTP Code</th>
-                        <th>Email Verified</th>
+                        <th>Approval</th>
+                        <th>Status</th>
                         <th>Action</th>
                     </tr>
 
@@ -648,38 +640,28 @@
                         <td>{{ user.phone_number }}</td>
 
                         <td>
-                            {% if user.otp_code %}
-                                <span class="badge bg-dark rounded-pill px-3 py-2">
-                                    {{ user.otp_code }}
-                                </span>
+                            <span class="badge bg-info text-dark rounded-pill">
+                                No OTP required
+                            </span>
+                        </td>
+
+                        <td>
+                            {% if user.is_email_verified and user.is_approved and user.is_active %}
+                                <span class="badge bg-success rounded-pill">Approved</span>
                             {% else %}
-                                <span class="text-muted">No code</span>
+                                <span class="badge bg-warning text-dark rounded-pill">Pending Approval</span>
                             {% endif %}
                         </td>
 
                         <td>
-                            {% if user.is_email_verified %}
-                                <span class="badge bg-success rounded-pill">Verified</span>
-                            {% elif user.otp_code %}
-                                <span class="badge bg-warning text-dark rounded-pill">Code Sent</span>
+                            {% if user.is_email_verified and user.is_approved and user.is_active %}
+                                <span class="text-muted">Approved</span>
                             {% else %}
-                                <span class="badge bg-danger rounded-pill">Not Verified</span>
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            {% if user.is_email_verified %}
                                 <a href="{% url 'approve_user' user.id %}"
-                                   class="btn btn-success btn-sm">
+                                   class="btn btn-success btn-sm"
+                                   onclick="return confirm('Approve and activate {{ user.username }} now?');">
                                     <i class="bi bi-check-circle-fill"></i>
                                     Approve
-                                </a>
-                            {% else %}
-                                <a href="{% url 'admin_verify_user' user.id %}"
-                                   class="btn btn-success btn-sm mb-2"
-                                   onclick="return confirm('Verify and activate {{ user.username }} now?');">
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Verify
                                 </a>
 
                                 <a href="{% url 'admin_reset_user_password' user.id %}"
@@ -688,26 +670,6 @@
                                     <i class="bi bi-key-fill"></i>
                                     Reset Password
                                 </a>
-
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <a href="{% url 'send_user_verification_code_channel' user.id 'email' %}"
-                                       class="btn btn-outline-primary">
-                                        <i class="bi bi-envelope-fill"></i>
-                                        Resend Email
-                                    </a>
-
-                                    <a href="{% url 'send_user_verification_code_channel' user.id 'whatsapp' %}"
-                                       class="btn btn-outline-success">
-                                        <i class="bi bi-whatsapp"></i>
-                                        WhatsApp
-                                    </a>
-
-                                    <a href="{% url 'send_user_verification_code_channel' user.id 'sms' %}"
-                                       class="btn btn-outline-dark">
-                                        <i class="bi bi-chat-dots-fill"></i>
-                                        SMS
-                                    </a>
-                                </div>
                             {% endif %}
 
                             <a href="{% url 'reject_user' user.id %}"
