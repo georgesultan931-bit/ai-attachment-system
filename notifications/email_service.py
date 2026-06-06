@@ -20,6 +20,67 @@ def _clean_setting(value):
     return str(value).strip()
 
 
+def _is_certificate_verify_error(error):
+
+    return (
+        'CERTIFICATE_VERIFY_FAILED' in str(error)
+        or 'certificate verify failed' in str(error).lower()
+    )
+
+
+def _build_connection(config, allow_insecure_ssl=False):
+
+    backend = None
+
+    if allow_insecure_ssl:
+        backend = 'notifications.email_backend.LocalSmtpEmailBackend'
+
+    return get_connection(
+        backend=backend,
+        host=config.email_host,
+        port=config.email_port,
+        username=config.email_host_user,
+        password=config.email_host_password,
+        use_tls=config.email_use_tls,
+        timeout=60,
+        allow_insecure_ssl=allow_insecure_ssl,
+    )
+
+
+def _send_email_once(config, subject, message, recipient_list, button_text=None, button_url=None, allow_insecure_ssl=False):
+
+    connection = _build_connection(
+        config,
+        allow_insecure_ssl=allow_insecure_ssl
+    )
+
+    html_content = build_html_email(
+        title=subject,
+        message=message,
+        button_text=button_text,
+        button_url=button_url
+    )
+
+    text_content = strip_tags(
+        html_content
+    )
+
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=text_content,
+        from_email=config.default_from_email,
+        to=recipient_list,
+        connection=connection,
+    )
+
+    email.attach_alternative(
+        html_content,
+        "text/html"
+    )
+
+    email.send()
+
+
 def get_active_email_config():
 
     config = EmailConfiguration.objects.filter(
@@ -223,40 +284,31 @@ def send_system_email(
 
     try:
 
-        connection = get_connection(
-            host=config.email_host,
-            port=config.email_port,
-            username=config.email_host_user,
-            password=config.email_host_password,
-            use_tls=config.email_use_tls,
-            timeout=60,
-        )
+        retry_message = ''
 
-        html_content = build_html_email(
-            title=subject,
-            message=message,
-            button_text=button_text,
-            button_url=button_url
-        )
+        try:
+            _send_email_once(
+                config,
+                subject,
+                message,
+                recipient_list,
+                button_text=button_text,
+                button_url=button_url
+            )
+        except Exception as first_error:
+            if not _is_certificate_verify_error(first_error):
+                raise
 
-        text_content = strip_tags(
-            html_content
-        )
-
-        email = EmailMultiAlternatives(
-            subject=subject,
-            body=text_content,
-            from_email=config.default_from_email,
-            to=recipient_list,
-            connection=connection,
-        )
-
-        email.attach_alternative(
-            html_content,
-            "text/html"
-        )
-
-        email.send()
+            retry_message = f' Secure SMTP certificate check failed first: {first_error}'
+            _send_email_once(
+                config,
+                subject,
+                message,
+                recipient_list,
+                button_text=button_text,
+                button_url=button_url,
+                allow_insecure_ssl=True
+            )
 
         for recipient in recipient_list:
 
@@ -269,7 +321,7 @@ def send_system_email(
 
         return (
             True,
-            'Email sent successfully.'
+            f'Email sent successfully.{retry_message}'
         )
 
     except Exception as error:

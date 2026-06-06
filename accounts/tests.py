@@ -478,6 +478,54 @@ class RegistrationNotificationTests(TestCase):
             ).exists()
         )
 
+    def test_email_retries_with_insecure_smtp_on_certificate_error(self):
+
+        with patch.dict(
+            'os.environ',
+            {
+                'EMAIL_HOST': 'smtp.gmail.com',
+                'EMAIL_PORT': '587',
+                'EMAIL_USE_TLS': 'True',
+                'EMAIL_HOST_USER': 'sender@example.com',
+                'EMAIL_HOST_PASSWORD': 'app-password',
+                'DEFAULT_FROM_EMAIL': 'sender@example.com',
+            }
+        ):
+            with patch(
+                'notifications.email_service._send_email_once',
+                side_effect=[
+                    Exception('[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed'),
+                    None,
+                ]
+            ) as send_once:
+                success, message = send_system_email(
+                    subject='Retry Certificate Test',
+                    message='Test body',
+                    recipient_list=[
+                        'student@example.com'
+                    ]
+                )
+
+        self.assertTrue(success)
+        self.assertIn(
+            'Email sent successfully',
+            message
+        )
+        self.assertEqual(
+            send_once.call_count,
+            2
+        )
+        self.assertTrue(
+            send_once.call_args_list[1].kwargs['allow_insecure_ssl']
+        )
+        self.assertTrue(
+            EmailLog.objects.filter(
+                recipient='student@example.com',
+                subject='Retry Certificate Test',
+                status='sent'
+            ).exists()
+        )
+
     def test_otp_verification_activates_and_logs_in_user(self):
 
         user = User.objects.create_user(
