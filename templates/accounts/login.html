@@ -203,6 +203,10 @@
                        class="form-control" 
                        required 
                        autocomplete="username"
+                       autocapitalize="none"
+                       autocorrect="off"
+                       spellcheck="false"
+                       inputmode="email"
                        placeholder="Enter your username or email"
                        value="{{ form.username.value|default:'' }}">
                 {% if form.username.errors %}
@@ -218,6 +222,9 @@
                        class="form-control" 
                        required 
                        autocomplete="current-password"
+                       autocapitalize="none"
+                       autocorrect="off"
+                       spellcheck="false"
                        placeholder="Enter your password">
                 {% if form.password.errors %}
                     <small style="color: #c33; font-size: 12px;">{{ form.password.errors.0 }}</small>
