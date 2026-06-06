@@ -4,6 +4,7 @@ from django.test import TestCase
 from django.test import RequestFactory
 from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from notifications.models import (
     EmailLog,
@@ -513,3 +514,87 @@ class RegistrationNotificationTests(TestCase):
         self.assertTrue(user.is_email_verified)
         self.assertTrue(user.is_approved)
         self.assertTrue(user.is_active)
+
+    def test_otp_verification_accepts_phone_formatted_code(self):
+
+        user = User.objects.create_user(
+            username='phone_otp_student',
+            email='phone-otp-student@example.com',
+            password='Testpass12345',
+            role='student',
+            phone_number='0712345678',
+            is_active=False,
+            is_approved=False,
+            is_email_verified=False
+        )
+        user.otp_code = '123456'
+        user.otp_created_at = timezone.now()
+        user.save()
+
+        response = self.client.post(
+            reverse(
+                'verify_otp',
+                args=[
+                    user.id
+                ]
+            ),
+            {
+                'otp_code': '123 456'
+            }
+        )
+
+        user.refresh_from_db()
+
+        self.assertRedirects(
+            response,
+            reverse('create_student_profile'),
+            fetch_redirect_response=False
+        )
+        self.assertTrue(user.is_email_verified)
+        self.assertTrue(user.is_approved)
+        self.assertTrue(user.is_active)
+
+    def test_admin_can_verify_and_activate_pending_user(self):
+
+        admin = User.objects.create_user(
+            username='verify_admin',
+            email='verify-admin@example.com',
+            password='Testpass12345',
+            role='admin',
+            is_active=True
+        )
+
+        user = User.objects.create_user(
+            username='admin_verified_student',
+            email='admin-verified-student@example.com',
+            password='Testpass12345',
+            role='student',
+            phone_number='0712345678',
+            is_active=False,
+            is_approved=False,
+            is_email_verified=False
+        )
+        user.generate_otp()
+
+        self.client.force_login(admin)
+
+        response = self.client.get(
+            reverse(
+                'admin_verify_user',
+                args=[
+                    user.id
+                ]
+            )
+        )
+
+        user.refresh_from_db()
+
+        self.assertRedirects(
+            response,
+            reverse('dashboard'),
+            fetch_redirect_response=False
+        )
+        self.assertTrue(user.is_email_verified)
+        self.assertTrue(user.is_approved)
+        self.assertTrue(user.is_active)
+        self.assertIsNone(user.otp_code)

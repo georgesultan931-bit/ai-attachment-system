@@ -150,6 +150,7 @@
                         <th>Role</th>
                         <th>OTP Code</th>
                         <th>Status</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
 
@@ -182,12 +183,24 @@
                                 <span class="badge bg-danger rounded-pill">Needs Resend</span>
                             {% endif %}
                         </td>
+                        <td>
+                            {% if user.is_email_verified and user.is_approved and user.is_active %}
+                                <span class="text-muted">Verified</span>
+                            {% else %}
+                                <a href="{% url 'admin_verify_user' user.id %}"
+                                   class="btn btn-success btn-sm"
+                                   onclick="return confirm('Verify and activate {{ user.username }} now?');">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    Verify
+                                </a>
+                            {% endif %}
+                        </td>
                     </tr>
 
                     {% empty %}
 
                     <tr>
-                        <td colspan="6" class="text-center text-muted">
+                        <td colspan="7" class="text-center text-muted">
                             No pending registration OTPs yet.
                         </td>
                     </tr>
@@ -656,6 +669,13 @@
                                     Approve
                                 </a>
                             {% else %}
+                                <a href="{% url 'admin_verify_user' user.id %}"
+                                   class="btn btn-success btn-sm mb-2"
+                                   onclick="return confirm('Verify and activate {{ user.username }} now?');">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    Verify
+                                </a>
+
                                 <div class="btn-group btn-group-sm" role="group">
                                     <a href="{% url 'send_user_verification_code_channel' user.id 'email' %}"
                                        class="btn btn-outline-primary">

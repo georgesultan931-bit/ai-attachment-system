@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core.exceptions import ValidationError
+import re
 
 from .models import User
 
@@ -385,8 +386,7 @@ class EmployerRegistrationForm(ReplacePendingAccountMixin, UserCreationForm):
 class OTPVerificationForm(forms.Form):
 
     otp_code = forms.CharField(
-        max_length=6,
-        min_length=6,
+        max_length=32,
         widget=forms.TextInput(
             attrs={
                 'class': 'form-control',
@@ -400,3 +400,23 @@ class OTPVerificationForm(forms.Form):
             }
         )
     )
+
+    def clean_otp_code(self):
+
+        otp_code = self.cleaned_data.get(
+            'otp_code',
+            ''
+        )
+
+        otp_code = re.sub(
+            r'\D',
+            '',
+            otp_code
+        )
+
+        if len(otp_code) != 6:
+            raise ValidationError(
+                'Enter the 6-digit verification code.'
+            )
+
+        return otp_code

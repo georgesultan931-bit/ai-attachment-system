@@ -527,6 +527,23 @@ def notify_admin_user_verified(request, user):
     )
 
 
+def activate_verified_user(user):
+    user.is_email_verified = True
+    user.is_approved = True
+    user.is_active = True
+    user.otp_code = None
+    user.otp_created_at = None
+    user.save(
+        update_fields=[
+            "is_email_verified",
+            "is_approved",
+            "is_active",
+            "otp_code",
+            "otp_created_at",
+        ]
+    )
+
+
 def student_register(request):
     mobile_device = is_mobile_device(request)
 
@@ -639,12 +656,7 @@ def verify_otp(request, user_id):
                 )
 
             elif entered_otp == user.otp_code:
-                user.is_email_verified = True
-                user.is_approved = True
-                user.is_active = True
-                user.otp_code = None
-                user.otp_created_at = None
-                user.save()
+                activate_verified_user(user)
 
                 notify_admin_user_verified(request, user)
 
@@ -845,6 +857,46 @@ def send_user_verification_code(request, user_id, channel="email"):
             f"Verification code sent to {user.username}. {result_message}",
         )
 
+    return redirect("dashboard")
+
+
+@login_required
+def admin_verify_user(request, user_id):
+    if request.user.role != "admin" and not request.user.is_staff and not request.user.is_superuser:
+        messages.error(request, "Only administrators can verify users.")
+        return redirect("dashboard")
+
+    user = get_object_or_404(
+        User,
+        id=user_id,
+        role__in=["student", "employer"],
+    )
+
+    activate_verified_user(user)
+    notify_admin_user_verified(request, user)
+
+    Notification.objects.create(
+        user=user,
+        message="Your account has been verified by admin. Please complete your profile to continue.",
+    )
+
+    send_system_email(
+        subject="Account Verified",
+        message=(
+            f"Hello {user.username},\n\n"
+            f"Your account has been verified by admin.\n\n"
+            f"You can now log in and complete your profile.\n\n"
+            f"AI Internship & Attachment Matching System"
+        ),
+        recipient_list=[user.email],
+        button_text="Login",
+        button_url=build_public_url(reverse("login")),
+    )
+
+    messages.success(
+        request,
+        f"{user.username} has been verified and activated. They can now complete their profile.",
+    )
     return redirect("dashboard")
 
 

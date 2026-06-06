@@ -80,6 +80,12 @@ urlpatterns = [
     ),
 
     path(
+        'admin-verify-user/<int:user_id>/',
+        views.admin_verify_user,
+        name='admin_verify_user'
+    ),
+
+    path(
         'reject-user/<int:user_id>/',
         views.reject_user,
         name='reject_user'
