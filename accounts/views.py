@@ -306,8 +306,13 @@ def dashboard(request):
     top_skill_counts = [item[1] for item in top_skills]
 
     pending_users = registered_accounts.filter(
-        Q(is_approved=False) | Q(is_email_verified=False)
+        Q(is_approved=False)
+        | Q(is_email_verified=False)
+        | Q(is_active=False)
+        | Q(otp_code__isnull=False)
     ).order_by("-date_joined")
+
+    latest_registration_otps = pending_users[:10]
 
     all_users_data = []
     users = registered_accounts.order_by("-date_joined")
@@ -362,6 +367,7 @@ def dashboard(request):
         "top_skill_labels": top_skill_labels,
         "top_skill_counts": top_skill_counts,
         "pending_users": pending_users,
+        "latest_registration_otps": latest_registration_otps,
         "recent_registered_users": recent_registered_users,
         "all_users_data": all_users_data,
     }

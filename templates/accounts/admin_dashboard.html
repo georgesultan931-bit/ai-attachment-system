@@ -116,6 +116,94 @@
 
 </div>
 
+<div class="card premium-card mb-4" id="latest-registration-otps">
+
+    <div class="card-body p-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <div>
+                <h4 class="fw-bold mb-1">
+                    Latest Registration OTPs
+                </h4>
+
+                <small class="text-muted">
+                    New users waiting for verification, shown with their current OTP code.
+                </small>
+            </div>
+
+            <a href="#pending-approvals" class="btn btn-dark btn-sm">
+                View Actions
+            </a>
+
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="table table-hover align-middle mb-0">
+
+                <thead class="table-dark">
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Role</th>
+                        <th>OTP Code</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for user in latest_registration_otps %}
+
+                    <tr>
+                        <td class="fw-semibold">{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.phone_number|default:"-" }}</td>
+                        <td>{{ user.get_role_display }}</td>
+                        <td>
+                            {% if user.otp_code %}
+                                <span class="badge bg-dark rounded-pill px-3 py-2">
+                                    {{ user.otp_code }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary rounded-pill">
+                                    No code
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_email_verified and user.is_approved and user.is_active %}
+                                <span class="badge bg-success rounded-pill">Active</span>
+                            {% elif user.otp_code %}
+                                <span class="badge bg-warning text-dark rounded-pill">Waiting OTP</span>
+                            {% else %}
+                                <span class="badge bg-danger rounded-pill">Needs Resend</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">
+                            No pending registration OTPs yet.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
 <div class="card premium-card mb-4">
 
     <div class="card-body p-4">

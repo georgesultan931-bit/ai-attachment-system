@@ -206,6 +206,10 @@ class RegistrationNotificationTests(TestCase):
         )
         self.assertIn(
             user,
+            list(response.context['latest_registration_otps'])
+        )
+        self.assertIn(
+            user,
             list(response.context['recent_registered_users'])
         )
         self.assertEqual(
