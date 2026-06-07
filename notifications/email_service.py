@@ -134,7 +134,7 @@ def get_active_email_config():
         email_host_password=email_host_password,
         default_from_email=_clean_setting(
             os.environ.get('DEFAULT_FROM_EMAIL')
-            or (email_host_user if legacy_email_user_env and not email_host_user_env else '')
+            or email_host_user
             or getattr(settings, 'DEFAULT_FROM_EMAIL', '')
             or email_host_user
         ),

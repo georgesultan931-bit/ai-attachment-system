@@ -428,6 +428,14 @@ def send_registration_received_notification(user):
         },
         salt=REGISTRATION_VERIFY_SALT,
     )
+    verification_url = build_public_url(
+        reverse(
+            "verify_registration_email",
+            args=[
+                token,
+            ],
+        )
+    )
 
     return send_system_email(
         subject="Verify Your Registration",
@@ -435,19 +443,14 @@ def send_registration_received_notification(user):
             f"Hello {user.username},\n\n"
             f"Your registration has been received by AI Internship & Attachment Matching System.\n\n"
             f"Press the verification button below to activate your account and continue to your profile.\n\n"
+            f"If the button does not open, copy and paste this link into your browser:\n"
+            f"{verification_url}\n\n"
             f"This verification link expires in 7 days.\n\n"
             f"AI Internship & Attachment Matching System"
         ),
         recipient_list=[user.email],
         button_text="Verify and Create Profile",
-        button_url=build_public_url(
-            reverse(
-                "verify_registration_email",
-                args=[
-                    token,
-                ],
-            )
-        ),
+        button_url=verification_url,
     )
 
 

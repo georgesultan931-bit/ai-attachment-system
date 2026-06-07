@@ -34,6 +34,7 @@ from .forms import (
 from .views import (
     build_absolute_url,
     notify_admin_new_registration,
+    send_registration_received_notification,
     REGISTRATION_VERIFY_SALT
 )
 
@@ -605,6 +606,27 @@ class RegistrationNotificationTests(TestCase):
             'admin@example.com'
         )
 
+    def test_email_config_defaults_from_email_to_host_user(self):
+
+        with patch.dict(
+            'os.environ',
+            {
+                'EMAIL_HOST': 'smtp.gmail.com',
+                'EMAIL_PORT': '587',
+                'EMAIL_USE_TLS': 'True',
+                'EMAIL_HOST_USER': 'sender@example.com',
+                'EMAIL_HOST_PASSWORD': 'app-password',
+            },
+            clear=True
+        ):
+
+            config = get_active_email_config()
+
+        self.assertEqual(
+            config.default_from_email,
+            'sender@example.com'
+        )
+
     def test_email_config_accepts_original_email_user_aliases(self):
 
         with patch.dict(
@@ -632,6 +654,49 @@ class RegistrationNotificationTests(TestCase):
         self.assertEqual(
             config.default_from_email,
             'original-sender@example.com'
+        )
+
+    def test_registration_email_includes_direct_verification_link(self):
+
+        user = User.objects.create_user(
+            username='link_user',
+            email='link-user@example.com',
+            password='Testpass12345',
+            role='student',
+            phone_number='0712345678',
+            is_active=False,
+            is_approved=False,
+            is_email_verified=False
+        )
+
+        with patch(
+            'accounts.views.send_system_email',
+            return_value=(True, 'Email sent successfully.')
+        ) as send_email:
+
+            success, message = send_registration_received_notification(user)
+
+        self.assertTrue(success)
+        self.assertEqual(
+            message,
+            'Email sent successfully.'
+        )
+
+        email_kwargs = send_email.call_args.kwargs
+
+        self.assertEqual(
+            email_kwargs['recipient_list'],
+            [
+                'link-user@example.com'
+            ]
+        )
+        self.assertIn(
+            '/verify-registration/',
+            email_kwargs['message']
+        )
+        self.assertIn(
+            '/verify-registration/',
+            email_kwargs['button_url']
         )
 
     def test_missing_email_config_creates_failed_email_log(self):
