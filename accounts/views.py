@@ -3,6 +3,7 @@
 from collections import Counter
 from datetime import timedelta
 import json
+import logging
 
 from django.conf import settings
 from django.contrib import messages
@@ -53,6 +54,8 @@ from .auth_flow import (
 
 from .models import User
 
+
+logger = logging.getLogger(__name__)
 
 REGISTRATION_VERIFY_SALT = "accounts.registration.verify"
 REGISTRATION_VERIFY_MAX_AGE = 60 * 60 * 24 * 7
@@ -566,6 +569,11 @@ def send_registration_verification_safely(request, user):
     try:
         notice_success, notice_message = send_registration_received_notification(user)
     except Exception as error:
+        logger.exception(
+            "Registration verification email failed for user_id=%s email=%s",
+            user.id,
+            user.email,
+        )
         notice_success = False
         notice_message = str(error)
 
@@ -580,6 +588,11 @@ def send_registration_verification_safely(request, user):
     try:
         notify_admin_new_registration(request, user, notice_success)
     except Exception as error:
+        logger.exception(
+            "Admin notification failed during registration for user_id=%s email=%s",
+            user.id,
+            user.email,
+        )
         EmailLog.objects.create(
             recipient=user.email,
             subject="New Registration Admin Notification",
@@ -620,6 +633,22 @@ def student_register(request):
                 messages.error(
                     request,
                     "This email is already registered. Please log in or use another email.",
+                )
+            except Exception as error:
+                logger.exception(
+                    "Student registration failed for email=%s",
+                    form.cleaned_data.get("email", ""),
+                )
+                EmailLog.objects.create(
+                    recipient=form.cleaned_data.get("email", ""),
+                    subject="Student Registration Failed",
+                    message="Student registration failed before verification email delivery.",
+                    status="failed",
+                    error_message=str(error),
+                )
+                messages.error(
+                    request,
+                    "Registration could not be completed. Please contact admin with the latest Email log error.",
                 )
     else:
         form = StudentRegistrationForm()
@@ -663,6 +692,22 @@ def employer_register(request):
                 messages.error(
                     request,
                     "This email is already registered. Please log in or use another email.",
+                )
+            except Exception as error:
+                logger.exception(
+                    "Employer registration failed for email=%s",
+                    form.cleaned_data.get("email", ""),
+                )
+                EmailLog.objects.create(
+                    recipient=form.cleaned_data.get("email", ""),
+                    subject="Employer Registration Failed",
+                    message="Employer registration failed before verification email delivery.",
+                    status="failed",
+                    error_message=str(error),
+                )
+                messages.error(
+                    request,
+                    "Registration could not be completed. Please contact admin with the latest Email log error.",
                 )
     else:
         form = EmployerRegistrationForm()

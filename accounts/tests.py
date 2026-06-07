@@ -462,6 +462,42 @@ class RegistrationNotificationTests(TestCase):
             ).exists()
         )
 
+    def test_registration_save_exception_is_logged_without_server_error(self):
+
+        with patch(
+            'accounts.forms.StudentRegistrationForm.save',
+            side_effect=Exception('Database write failed')
+        ):
+
+            response = self.client.post(
+                reverse('student_register'),
+                {
+                    'username': 'save_error_student',
+                    'email': 'save-error-student@example.com',
+                    'phone_number': '0712345678',
+                    'password1': 'Testpass12345',
+                    'password2': 'Testpass12345',
+                }
+            )
+
+        self.assertEqual(
+            response.status_code,
+            200
+        )
+        self.assertFalse(
+            User.objects.filter(
+                username='save_error_student'
+            ).exists()
+        )
+        self.assertTrue(
+            EmailLog.objects.filter(
+                recipient='save-error-student@example.com',
+                subject='Student Registration Failed',
+                status='failed',
+                error_message='Database write failed'
+            ).exists()
+        )
+
     def test_registration_email_link_verifies_and_opens_profile(self):
 
         user = User.objects.create_user(
