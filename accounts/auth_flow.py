@@ -87,14 +87,22 @@ def authenticate_identifier(request, identifier, password):
     return LoginResult(None, 'bad_password')
 
 
+def has_student_profile(user):
+    return hasattr(user, 'studentprofile')
+
+
+def has_employer_profile(user):
+    return hasattr(user, 'employerprofile')
+
+
 def dashboard_redirect_name(user):
     if user.role == 'student':
-        if not hasattr(user, 'student_profile'):
+        if not has_student_profile(user):
             return 'create_student_profile'
         return 'student_dashboard'
 
     if user.role == 'employer':
-        if not hasattr(user, 'employer_profile'):
+        if not has_employer_profile(user):
             return 'create_employer_profile'
         return 'employer_profile'
 

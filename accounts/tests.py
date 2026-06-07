@@ -13,8 +13,11 @@ from notifications.models import (
     EmailLog,
     Notification
 )
+from notifications.context_processors import notification_count
 from notifications.email_service import get_active_email_config
 from notifications.email_service import send_system_email
+from employers.models import EmployerProfile
+from students.models import StudentProfile
 
 from .models import User
 from .auth_flow import (
@@ -110,6 +113,91 @@ class RegistrationNotificationTests(TestCase):
         self.assertEqual(
             dashboard_redirect_name(user),
             'create_student_profile'
+        )
+
+    def test_dashboard_redirect_sends_student_with_profile_to_dashboard(self):
+
+        user = User.objects.create_user(
+            username='student_with_profile',
+            email='student-profile@example.com',
+            password='Testpass12345',
+            role='student',
+            is_active=True,
+            is_approved=True,
+            is_email_verified=True
+        )
+
+        StudentProfile.objects.create(
+            user=user,
+            first_name='Amina',
+            surname='Hassan',
+            phone_number='0712345678',
+            location='Nairobi'
+        )
+
+        self.assertEqual(
+            dashboard_redirect_name(user),
+            'student_dashboard'
+        )
+
+    def test_dashboard_redirect_sends_employer_with_profile_to_dashboard(self):
+
+        user = User.objects.create_user(
+            username='employer_with_profile',
+            email='employer-profile@example.com',
+            password='Testpass12345',
+            role='employer',
+            is_active=True,
+            is_approved=True,
+            is_email_verified=True
+        )
+
+        EmployerProfile.objects.create(
+            user=user,
+            company_name='Acme Ltd',
+            company_email='acme@example.com',
+            company_phone='0712345678',
+            company_location='Nairobi',
+            industry='Technology',
+            company_description='Hiring interns.'
+        )
+
+        self.assertEqual(
+            dashboard_redirect_name(user),
+            'employer_profile'
+        )
+
+    def test_sidebar_uses_employer_logo_url(self):
+
+        user = User.objects.create_user(
+            username='logo_employer',
+            email='logo-employer@example.com',
+            password='Testpass12345',
+            role='employer',
+            is_active=True,
+            is_approved=True,
+            is_email_verified=True
+        )
+
+        EmployerProfile.objects.create(
+            user=user,
+            company_name='Logo Ltd',
+            company_email='logo@example.com',
+            company_phone='0712345678',
+            company_location='Nairobi',
+            industry='Technology',
+            company_description='Logo test.',
+            logo='company_logos/logo.png'
+        )
+
+        request = RequestFactory().get('/')
+        request.user = user
+
+        context = notification_count(request)
+
+        self.assertEqual(
+            context['dashboard_profile_image_url'],
+            '/media/company_logos/logo.png'
         )
 
     def test_phone_input_attributes_are_mobile_safe(self):

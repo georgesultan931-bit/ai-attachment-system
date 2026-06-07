@@ -47,6 +47,8 @@ from .auth_flow import (
     authenticate_identifier,
     clean_login_value,
     dashboard_redirect_name,
+    has_employer_profile,
+    has_student_profile,
 )
 
 from .models import User
@@ -230,14 +232,14 @@ def dashboard(request):
             messages.warning(request, "Your account is pending admin approval.")
             return redirect("pending_approval")
 
-        if not hasattr(request.user, "student_profile"):
+        if not has_student_profile(request.user):
             messages.info(request, "Please complete your profile to continue.")
             return redirect("create_student_profile")
 
         return redirect("student_dashboard")
 
     if request.user.role == "employer":
-        if not hasattr(request.user, "employer_profile"):
+        if not has_employer_profile(request.user):
             messages.info(request, "Please complete your company profile to continue.")
             return redirect("create_employer_profile")
 
@@ -749,7 +751,7 @@ def verify_registration_email(request, token):
 
 @login_required
 def create_student_profile(request):
-    if hasattr(request.user, "student_profile"):
+    if has_student_profile(request.user):
         return redirect("student_dashboard")
 
     if request.method == "POST":
@@ -781,7 +783,7 @@ def create_student_profile(request):
 
 @login_required
 def create_employer_profile(request):
-    if hasattr(request.user, "employer_profile"):
+    if has_employer_profile(request.user):
         return redirect("employer_profile")
 
     if request.method == "POST":
