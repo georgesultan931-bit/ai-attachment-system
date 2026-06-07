@@ -17,6 +17,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods
 
@@ -90,6 +91,7 @@ def account_start(request):
 
 
 @sensitive_post_parameters("password")
+@never_cache
 @ensure_csrf_cookie
 @require_http_methods(["GET", "POST"])
 def user_login(request):

@@ -453,6 +453,25 @@ class RegistrationNotificationTests(TestCase):
             fetch_redirect_response=False
         )
 
+    def test_login_page_is_not_cached_so_csrf_token_stays_fresh(self):
+
+        response = self.client.get(
+            reverse('login')
+        )
+
+        self.assertContains(
+            response,
+            'csrfmiddlewaretoken'
+        )
+        self.assertIn(
+            'no-cache',
+            response.headers.get('Cache-Control', '')
+        )
+        self.assertIn(
+            'no-store',
+            response.headers.get('Cache-Control', '')
+        )
+
     def test_registration_trims_phone_keyboard_spaces(self):
 
         response = self.client.post(
