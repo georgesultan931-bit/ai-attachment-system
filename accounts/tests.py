@@ -426,6 +426,42 @@ class RegistrationNotificationTests(TestCase):
             ).exists()
         )
 
+    def test_registration_email_exception_does_not_crash_registration(self):
+
+        with patch(
+            'accounts.views.send_registration_received_notification',
+            side_effect=Exception('SMTP authentication failed')
+        ):
+
+            response = self.client.post(
+                reverse('student_register'),
+                {
+                    'username': 'smtp_error_student',
+                    'email': 'smtp-error-student@example.com',
+                    'phone_number': '0712345678',
+                    'password1': 'Testpass12345',
+                    'password2': 'Testpass12345',
+                }
+            )
+
+        self.assertRedirects(
+            response,
+            reverse('pending_approval')
+        )
+        self.assertTrue(
+            User.objects.filter(
+                username='smtp_error_student'
+            ).exists()
+        )
+        self.assertTrue(
+            EmailLog.objects.filter(
+                recipient='smtp-error-student@example.com',
+                subject='Verify Your Registration',
+                status='failed',
+                error_message='SMTP authentication failed'
+            ).exists()
+        )
+
     def test_registration_email_link_verifies_and_opens_profile(self):
 
         user = User.objects.create_user(

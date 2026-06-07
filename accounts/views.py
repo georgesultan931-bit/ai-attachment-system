@@ -562,6 +562,35 @@ def activate_verified_user(user):
     )
 
 
+def send_registration_verification_safely(request, user):
+    try:
+        notice_success, notice_message = send_registration_received_notification(user)
+    except Exception as error:
+        notice_success = False
+        notice_message = str(error)
+
+        EmailLog.objects.create(
+            recipient=user.email,
+            subject="Verify Your Registration",
+            message="Registration verification email failed before delivery.",
+            status="failed",
+            error_message=notice_message,
+        )
+
+    try:
+        notify_admin_new_registration(request, user, notice_success)
+    except Exception as error:
+        EmailLog.objects.create(
+            recipient=user.email,
+            subject="New Registration Admin Notification",
+            message="Admin notification failed during registration.",
+            status="failed",
+            error_message=str(error),
+        )
+
+    return notice_success, notice_message
+
+
 def student_register(request):
     mobile_device = is_mobile_device(request)
 
@@ -572,8 +601,7 @@ def student_register(request):
             try:
                 user = form.save()
 
-                notice_success, notice_message = send_registration_received_notification(user)
-                notify_admin_new_registration(request, user, notice_success)
+                notice_success, notice_message = send_registration_verification_safely(request, user)
 
                 if notice_success:
                     messages.success(
@@ -616,8 +644,7 @@ def employer_register(request):
             try:
                 user = form.save()
 
-                notice_success, notice_message = send_registration_received_notification(user)
-                notify_admin_new_registration(request, user, notice_success)
+                notice_success, notice_message = send_registration_verification_safely(request, user)
 
                 if notice_success:
                     messages.success(
