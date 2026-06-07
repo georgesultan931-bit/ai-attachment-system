@@ -615,6 +615,8 @@ def student_register(request):
                 user = form.save()
 
                 notice_success, notice_message = send_registration_verification_safely(request, user)
+                request.session["registration_email_status"] = "sent" if notice_success else "failed"
+                request.session["registration_email_message"] = notice_message
 
                 if notice_success:
                     messages.success(
@@ -674,6 +676,8 @@ def employer_register(request):
                 user = form.save()
 
                 notice_success, notice_message = send_registration_verification_safely(request, user)
+                request.session["registration_email_status"] = "sent" if notice_success else "failed"
+                request.session["registration_email_message"] = notice_message
 
                 if notice_success:
                     messages.success(
@@ -890,12 +894,16 @@ def create_employer_profile(request):
 
 def pending_approval(request):
     mobile_device = is_mobile_device(request)
+    registration_email_status = request.session.get("registration_email_status")
+    registration_email_message = request.session.get("registration_email_message", "")
 
     return render(
         request,
         "accounts/pending_approval.html",
         {
             "email_delivery_ready": get_active_email_config() is not None,
+            "registration_email_status": registration_email_status,
+            "registration_email_message": registration_email_message,
             "mobile_device": mobile_device,
         },
     )

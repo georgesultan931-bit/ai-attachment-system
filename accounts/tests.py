@@ -462,6 +462,19 @@ class RegistrationNotificationTests(TestCase):
             ).exists()
         )
 
+        pending_response = self.client.get(
+            reverse('pending_approval')
+        )
+
+        self.assertContains(
+            pending_response,
+            'Email Delivery Failed'
+        )
+        self.assertNotContains(
+            pending_response,
+            'We sent a verification link'
+        )
+
     def test_registration_save_exception_is_logged_without_server_error(self):
 
         with patch(

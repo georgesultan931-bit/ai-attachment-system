@@ -80,10 +80,27 @@
         <h2>Registration Under Review</h2>
         
         <div class="message">
-            Your registration has been received. Open the verification email to continue.
+            Your registration has been received.
+            {% if registration_email_status == "sent" %}
+                Open the verification email to continue.
+            {% else %}
+                The email delivery status needs admin attention.
+            {% endif %}
         </div>
         
-        {% if not email_delivery_ready %}
+        {% if registration_email_status == "sent" %}
+            <div class="warning-box">
+                <strong>Check Your Email</strong><br>
+                We sent a verification link to your email address. Press the link to verify your account 
+                and go straight to your profile form.
+            </div>
+        {% elif registration_email_status == "failed" %}
+            <div class="warning-box">
+                <strong>Email Delivery Failed</strong><br>
+                Your account was created, but the verification email could not be delivered.
+                Admin should open Email logs and check the latest error message.
+            </div>
+        {% elif not email_delivery_ready %}
             <div class="warning-box">
                 <strong>Email Configuration Notice</strong><br>
                 The email system is not fully configured. Admin can still approve your account 
@@ -91,9 +108,8 @@
             </div>
         {% else %}
             <div class="warning-box">
-                <strong>Check Your Email</strong><br>
-                We sent a verification link to your email address. Press the link to verify your account 
-                and go straight to your profile form.
+                <strong>Registration Received</strong><br>
+                If you do not receive a verification email, admin should check Email logs for the latest delivery status.
             </div>
         {% endif %}
         
