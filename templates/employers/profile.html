@@ -400,10 +400,6 @@ body.dark-mode .small-stat{
                     {{ top_candidate.application.student.full_name }}
                 </h4>
 
-                <p class="text-muted mb-1">
-                    {{ top_candidate.application.student.course }}
-                </p>
-
                 <p class="mb-0">
                     <strong>Opportunity:</strong>
                     {{ top_candidate.application.opportunity.title }}
@@ -502,7 +498,6 @@ body.dark-mode .small-stat{
                     <tr>
                         <th>Rank</th>
                         <th>Student</th>
-                        <th>Course</th>
                         <th>Opportunity</th>
                         <th>AI Score</th>
                         <th>Matched Skills</th>
@@ -527,10 +522,6 @@ body.dark-mode .small-stat{
                                 <strong>
                                     {{ item.application.student.full_name }}
                                 </strong>
-                            </td>
-
-                            <td>
-                                {{ item.application.student.course }}
                             </td>
 
                             <td>
@@ -660,7 +651,6 @@ body.dark-mode .small-stat{
 
                     <tr>
                         <th>Student</th>
-                        <th>Course</th>
                         <th>Opportunity</th>
                         <th>Status</th>
                         <th>Date</th>
@@ -676,10 +666,6 @@ body.dark-mode .small-stat{
 
                             <td>
                                 {{ application.student.user.username }}
-                            </td>
-
-                            <td>
-                                {{ application.student.course }}
                             </td>
 
                             <td>

@@ -200,6 +200,45 @@ class RegistrationNotificationTests(TestCase):
             '/media/company_logos/logo.png'
         )
 
+    def test_approved_employer_can_open_create_profile_form(self):
+
+        user = User.objects.create_user(
+            username='approved_employer',
+            email='approved-employer@example.com',
+            password='Testpass12345',
+            role='employer',
+            is_active=True,
+            is_approved=True,
+            is_email_verified=True
+        )
+
+        self.client.force_login(user)
+
+        response = self.client.get(
+            reverse('create_employer_profile')
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200
+        )
+        self.assertTemplateUsed(
+            response,
+            'employers/create_profile.html'
+        )
+        self.assertContains(
+            response,
+            'csrfmiddlewaretoken'
+        )
+        self.assertNotContains(
+            response,
+            'Course'
+        )
+        self.assertNotContains(
+            response,
+            'Institution'
+        )
+
     def test_phone_input_attributes_are_mobile_safe(self):
 
         forms_and_fields = [

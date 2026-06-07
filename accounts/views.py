@@ -805,7 +805,7 @@ def create_employer_profile(request):
 
     return render(
         request,
-        "accounts/create_employer_profile.html",
+        "employers/create_profile.html",
         {
             "form": form,
             "user": request.user,
