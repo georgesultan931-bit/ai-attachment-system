@@ -1,5 +1,7 @@
+from io import StringIO
 from unittest.mock import patch
 
+from django.core.management import call_command
 from django.test import TestCase
 from django.test import RequestFactory
 from django.test import override_settings
@@ -57,7 +59,7 @@ class RegistrationNotificationTests(TestCase):
         response = authenticate_identifier(
             None,
             ' Python ',
-            ' Testpass12345 '
+            '\u200bTestpass12345\ufeff'
         )
 
         self.assertEqual(
@@ -67,6 +69,30 @@ class RegistrationNotificationTests(TestCase):
         self.assertEqual(
             response.reason,
             'inactive_or_unverified'
+        )
+
+    def test_custom_login_form_accepts_phone_keyboard_hidden_characters(self):
+
+        User.objects.create_user(
+            username='formuser',
+            email='form-user@example.com',
+            password='Testpass12345',
+            role='student',
+            is_active=True,
+            is_approved=True,
+            is_email_verified=True
+        )
+
+        form = CustomLoginForm(
+            data={
+                'username': '  form-user@example.com\u200e  ',
+                'password': '\u200bTestpass12345\u2060',
+            }
+        )
+
+        self.assertTrue(
+            form.is_valid(),
+            form.errors.as_data()
         )
 
     def test_dashboard_redirect_sends_profileless_student_to_profile(self):
@@ -313,7 +339,7 @@ class RegistrationNotificationTests(TestCase):
         self.assertTrue(user.is_active)
         self.assertIsNone(user.otp_code)
 
-    def test_login_accepts_email_and_trims_phone_keyboard_spaces(self):
+    def test_login_accepts_email_and_phone_keyboard_hidden_characters(self):
 
         User.objects.create_user(
             username='phoneuser',
@@ -328,8 +354,8 @@ class RegistrationNotificationTests(TestCase):
         response = self.client.post(
             reverse('login'),
             {
-                'username': '  phone-user@example.com  ',
-                'password': ' Testpass12345 ',
+                'username': '  phone-user@example.com\ufeff  ',
+                'password': '\u200bTestpass12345\u2060',
             }
         )
 
@@ -412,7 +438,7 @@ class RegistrationNotificationTests(TestCase):
             reverse('login'),
             {
                 'username': ' Python ',
-                'password': ' Testpass12345 ',
+                'password': 'Testpass12345\u200d',
             }
         )
 
@@ -715,6 +741,72 @@ class RegistrationNotificationTests(TestCase):
         )
         self.assertTrue(
             user.check_password('Testpass12345')
+        )
+
+    def test_ensure_admin_creates_admin_when_password_is_supplied(self):
+
+        out = StringIO()
+
+        call_command(
+            'ensure_admin',
+            username='admin',
+            email='admin@example.com',
+            password='AdminPass12345!',
+            stdout=out,
+        )
+
+        user = User.objects.get(username='admin')
+
+        self.assertEqual(user.email, 'admin@example.com')
+        self.assertEqual(user.role, 'admin')
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_superuser)
+        self.assertTrue(user.is_active)
+        self.assertTrue(user.is_email_verified)
+        self.assertTrue(user.is_approved)
+        self.assertTrue(user.check_password('AdminPass12345!'))
+        self.assertIn(
+            'Created admin account admin',
+            out.getvalue()
+        )
+
+    def test_ensure_admin_does_not_change_existing_password_by_default(self):
+
+        User.objects.create_user(
+            username='admin',
+            email='admin@example.com',
+            password='OriginalPass12345!',
+            role='student',
+            is_active=False,
+            is_approved=False,
+            is_email_verified=False,
+            is_staff=False,
+            is_superuser=False,
+        )
+
+        out = StringIO()
+
+        call_command(
+            'ensure_admin',
+            username='admin',
+            email='admin@example.com',
+            password='NewPass12345!',
+            stdout=out,
+        )
+
+        user = User.objects.get(username='admin')
+
+        self.assertEqual(user.role, 'admin')
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_superuser)
+        self.assertTrue(user.is_active)
+        self.assertTrue(user.is_email_verified)
+        self.assertTrue(user.is_approved)
+        self.assertTrue(user.check_password('OriginalPass12345!'))
+        self.assertFalse(user.check_password('NewPass12345!'))
+        self.assertIn(
+            'Password was not changed',
+            out.getvalue()
         )
 
     def test_admin_can_delete_only_old_pending_accounts(self):

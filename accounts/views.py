@@ -123,8 +123,8 @@ def user_login(request):
             raw_identifier = request.POST.get("username", "")
             password = request.POST.get("password", "")
 
-        identifier = clean_login_value(raw_identifier)
-        password = clean_login_value(password)
+        identifier = clean_login_value(raw_identifier, is_password=False)
+        password = clean_login_value(password, is_password=True)
 
         if not identifier or not password:
             error_message = "Username/email and password are required."

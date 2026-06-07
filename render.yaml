@@ -42,5 +42,13 @@ services:
         sync: false
       - key: ADMIN_NOTIFICATION_EMAIL
         sync: false
+      - key: DJANGO_ADMIN_USERNAME
+        value: "admin"
+      - key: DJANGO_ADMIN_EMAIL
+        value: "admin@example.com"
+      - key: DJANGO_ADMIN_PASSWORD
+        sync: false
+      - key: DJANGO_ADMIN_FORCE_PASSWORD_RESET
+        value: "False"
       - key: PYTHON_VERSION
         value: "3.12.4"

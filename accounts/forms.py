@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 import re
 
 from .models import User
+from .auth_flow import clean_login_value, find_user_by_identifier
 
 
 def can_replace_pending_user(user):
@@ -113,37 +114,35 @@ class CustomLoginForm(AuthenticationForm):
 
     def clean_username(self):
 
-        return self.cleaned_data.get(
-            'username',
-            ''
-        ).strip()
+        return clean_login_value(
+            self.cleaned_data.get(
+                'username',
+                ''
+            ),
+            is_password=False
+        )
 
     def clean(self):
 
-        username_or_email = self.cleaned_data.get(
-            'username',
-            ''
-        ).strip()
+        username_or_email = clean_login_value(
+            self.cleaned_data.get(
+                'username',
+                ''
+            ),
+            is_password=False
+        )
 
-        password = self.cleaned_data.get(
-            'password',
-            ''
-        ).strip()
+        password = clean_login_value(
+            self.cleaned_data.get(
+                'password',
+                ''
+            ),
+            is_password=True
+        )
 
         if username_or_email and password:
 
-            lookup = {
-                'email__iexact': username_or_email
-            }
-
-            if '@' not in username_or_email:
-                lookup = {
-                    'username__iexact': username_or_email
-                }
-
-            matching_user = User.objects.filter(
-                **lookup
-            ).first()
+            matching_user = find_user_by_identifier(username_or_email)
 
             if matching_user is None or not matching_user.check_password(password):
 
