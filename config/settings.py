@@ -3,74 +3,37 @@ Django settings for config project.
 """
 
 import os
+import sys  # ← ADD THIS LINE - FIXES THE ERROR
+from pathlib import Path
 
 import certifi
 
-from pathlib import Path
-
-
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-os.environ.setdefault(
-    'SSL_CERT_FILE',
-    certifi.where()
-)
+# SSL Certificate settings
+os.environ.setdefault('SSL_CERT_FILE', certifi.where())
+os.environ.setdefault('REQUESTS_CA_BUNDLE', certifi.where())
 
-os.environ.setdefault(
-    'REQUESTS_CA_BUNDLE',
-    certifi.where()
-)
+# Security Settings
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-s5vx9(pkiy-&g3fcvkf226tv&1y&pxs%=dwn%b8g83pzjvgch$')
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
 
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',') if host.strip()]
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()]
+PUBLIC_SITE_URL = os.environ.get('PUBLIC_SITE_URL', 'https://ai-attachment-system.onrender.com').rstrip('/')
 
-SECRET_KEY = os.environ.get(
-    'DJANGO_SECRET_KEY',
-    'django-insecure-s5vx9(pkiy-&g3fcvkf226tv&1y&pxs%=dwn%b8g83pzjvgch$'
-)
-
-DEBUG = os.environ.get(
-    'DJANGO_DEBUG',
-    'True'
-).lower() == 'true'
-
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.environ.get(
-        'DJANGO_ALLOWED_HOSTS',
-        '*'
-    ).split(',')
-    if host.strip()
-]
-
-CSRF_TRUSTED_ORIGINS = [
-    origin.strip()
-    for origin in os.environ.get(
-        'DJANGO_CSRF_TRUSTED_ORIGINS',
-        ''
-    ).split(',')
-    if origin.strip()
-]
-
-PUBLIC_SITE_URL = os.environ.get(
-    'PUBLIC_SITE_URL',
-    'https://ai-attachment-system.onrender.com'
-).rstrip('/')
-
+# HTTPS Settings
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '3600'))
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get(
-        'SECURE_HSTS_INCLUDE_SUBDOMAINS',
-        'False'
-    ).lower() == 'true'
-    SECURE_HSTS_PRELOAD = os.environ.get(
-        'SECURE_HSTS_PRELOAD',
-        'False'
-    ).lower() == 'true'
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'False').lower() == 'true'
+    SECURE_HSTS_PRELOAD = os.environ.get('SECURE_HSTS_PRELOAD', 'False').lower() == 'true'
 
-
+# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -78,7 +41,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     'accounts',
     'students',
     'employers',
@@ -86,7 +48,6 @@ INSTALLED_APPS = [
     'matching',
     'notifications',
 ]
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -98,31 +59,20 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# WhiteNoise for static files
 try:
     import whitenoise
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 except ImportError:
-    whitenoise = None
-
-if whitenoise is not None:
-    MIDDLEWARE.insert(
-        1,
-        'whitenoise.middleware.WhiteNoiseMiddleware'
-    )
-
+    pass
 
 ROOT_URLCONF = 'config.urls'
-
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-
-        'DIRS': [
-            BASE_DIR / 'templates',
-        ],
-
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
-
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
@@ -134,10 +84,9 @@ TEMPLATES = [
     },
 ]
 
-
 WSGI_APPLICATION = 'config.wsgi.application'
 
-
+# Database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -147,130 +96,92 @@ DATABASES = {
 
 if os.environ.get('DATABASE_URL'):
     import dj_database_url
+    DATABASES['default'] = dj_database_url.parse(os.environ['DATABASE_URL'], conn_max_age=600)
 
-    DATABASES['default'] = dj_database_url.parse(
-        os.environ['DATABASE_URL'],
-        conn_max_age=600
-    )
-
-
+# Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
+# Internationalization
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'Africa/Nairobi'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
+# Static files
 STATIC_URL = 'static/'
-
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
-
+STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-if whitenoise is not None:
+if 'whitenoise' in globals():
     STORAGES = {
-        'default': {
-            'BACKEND': 'django.core.files.storage.FileSystemStorage',
-        },
-        'staticfiles': {
-            'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
-        },
+        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
     }
 
-
+# Media files
 MEDIA_URL = '/media/'
-
 MEDIA_ROOT = BASE_DIR / 'media'
 
-
+# Custom user model
 AUTH_USER_MODEL = 'accounts.User'
 
-
+# Authentication
+AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
 LOGIN_URL = 'login'
-
 LOGIN_REDIRECT_URL = 'dashboard'
-
 LOGOUT_REDIRECT_URL = 'login'
-
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# ==============================================================
+# EMAIL CONFIGURATION
+# ==============================================================
 
-# Email Configuration - Development
-# OTP emails will appear in the terminal while testing.
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-
-# Local development workaround for networks/antivirus tools that intercept
-# smtp.gmail.com with a self-signed certificate. Disable this in production.
-EMAIL_ALLOW_INSECURE_SMTP_SSL = os.environ.get(
-    'EMAIL_ALLOW_INSECURE_SMTP_SSL',
-    str(DEBUG)
-).lower() == 'true'
-
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.smtp.EmailBackend'
+)
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get(
     'DEFAULT_FROM_EMAIL',
-    "georgesultan931@gmail.com"
+    EMAIL_HOST_USER
 )
-
-# Add these settings to the bottom of your existing settings.py file
+ADMIN_NOTIFICATION_EMAIL = os.environ.get(
+    'ADMIN_NOTIFICATION_EMAIL',
+    EMAIL_HOST_USER
+)
+EMAIL_ALLOW_INSECURE_SMTP_SSL = os.environ.get(
+    'EMAIL_ALLOW_INSECURE_SMTP_SSL',
+    'False'
+).lower() == 'true'
+# ==============================================================
+# SESSION SETTINGS FOR MOBILE COMPATIBILITY
 # ==============================================================
 
-# Session Settings for Mobile Compatibility
-# ==============================================================
-SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+SESSION_COOKIE_AGE = 1209600  # 2 weeks
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Lax'  # Changed from 'Strict' for mobile compatibility
+SESSION_COOKIE_SAMESITE = 'Lax'  # Critical for mobile
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
-SESSION_SAVE_EVERY_REQUEST = True  # Important for mobile session persistence
+SESSION_SAVE_EVERY_REQUEST = True
 
 # CSRF Settings for Mobile
-# ==============================================================
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_USE_SESSIONS = False
 
-# Override HTTPS settings for mobile if not in production
+# Override HTTPS settings for mobile
 if DEBUG:
-    # During development, allow non-HTTPS for mobile testing
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
 else:
-    # In production with HTTPS, these should be True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-
-# Authentication Backend (ensure it's explicitly set)
-# ==============================================================
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-]
-
-# Login URL (ensure this matches your urlpatterns)
-# ==============================================================
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'dashboard'
-LOGOUT_REDIRECT_URL = 'login'

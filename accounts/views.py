@@ -7,7 +7,7 @@ import logging
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.core import signing
@@ -26,56 +26,99 @@ from students.forms import StudentProfileForm
 from employers.models import EmployerProfile
 from employers.forms import EmployerProfileForm
 
-from internships.models import (
-    InternshipOpportunity,
-    Application,
-)
+from internships.models import InternshipOpportunity, Application
 
 from notifications.models import Notification, EmailLog
-from notifications.email_service import (
-    get_active_email_config,
-    send_system_email,
-)
+from notifications.email_service import get_active_email_config, send_system_email
 from notifications.sms_service import send_registration_otp_sms
 from notifications.whatsapp_service import send_registration_otp_whatsapp
 
-from .forms import (
-    StudentRegistrationForm,
-    EmployerRegistrationForm,
-    OTPVerificationForm,
-)
-from .auth_flow import (
-    authenticate_identifier,
-    clean_login_value,
-    dashboard_redirect_name,
-    has_employer_profile,
-    has_student_profile,
-)
-
+from .forms import StudentRegistrationForm, EmployerRegistrationForm, OTPVerificationForm
 from .models import User
 
 
 logger = logging.getLogger(__name__)
 
 REGISTRATION_VERIFY_SALT = "accounts.registration.verify"
-REGISTRATION_VERIFY_MAX_AGE = 60 * 60 * 24 * 7
+REGISTRATION_VERIFY_MAX_AGE = 60 * 60 * 24 * 7  # 7 days
 
 
 def is_mobile_device(request):
-    """
-    Detect if the request comes from a mobile device.
-    """
+    """Detect if the request comes from a mobile device"""
     user_agent = request.META.get("HTTP_USER_AGENT", "").lower()
-    mobile_keywords = [
-        "mobile",
-        "android",
-        "iphone",
-        "ipad",
-        "ipod",
-        "blackberry",
-        "windows phone",
-    ]
+    mobile_keywords = ["mobile", "android", "iphone", "ipad", "ipod", "blackberry", "windows phone", "samsung", "xiaomi"]
     return any(keyword in user_agent for keyword in mobile_keywords)
+
+
+def clean_login_value(value, is_password=False):
+    """Cleans username/email from mobile keyboards"""
+    if value is None:
+        return ""
+
+    value = str(value)
+    for char in ["\u200b", "\u200c", "\u200d", "\u2060", "\ufeff"]:
+        value = value.replace(char, "")
+
+    if not is_password:
+        value = value.strip()
+
+    return value
+
+
+def get_username_from_identifier(identifier):
+    """Get username from email or username input"""
+    identifier = clean_login_value(identifier)
+    if not identifier:
+        return ""
+
+    if "@" in identifier:
+        user_obj = User.objects.filter(email__iexact=identifier).first()
+    else:
+        user_obj = User.objects.filter(username__iexact=identifier).first()
+
+    if user_obj:
+        return user_obj.get_username()
+    return identifier
+
+
+def has_student_profile(user):
+    """Check if user has student profile"""
+    return hasattr(user, 'studentprofile')
+
+
+def has_employer_profile(user):
+    """Check if user has employer profile"""
+    return hasattr(user, 'employerprofile')
+
+
+def get_dashboard_redirect_name(user):
+    """Get redirect URL based on user role and profile status"""
+    if user.role == "student":
+        if not has_student_profile(user):
+            return "create_student_profile"
+        return "student_dashboard"
+
+    if user.role == "employer":
+        if not has_employer_profile(user):
+            return "create_employer_profile"
+        return "employer_profile"
+
+    return "dashboard"
+
+
+def build_public_url(path):
+    """Build absolute URL for the site"""
+    public_site_url = getattr(settings, "PUBLIC_SITE_URL", "https://ai-attachment-system.onrender.com").rstrip("/")
+    return f"{public_site_url}{path}"
+
+
+def build_absolute_url(request, view_name, *args):
+    """Build absolute URL from request"""
+    path = reverse(view_name, args=args)
+    public_site_url = getattr(settings, "PUBLIC_SITE_URL", "").rstrip("/")
+    if public_site_url:
+        return f"{public_site_url}{path}"
+    return request.build_absolute_uri(path)
 
 
 def home(request):
@@ -96,15 +139,7 @@ def account_start(request):
 @ensure_csrf_cookie
 @require_http_methods(["GET", "POST"])
 def user_login(request):
-    """
-    Login view fixed for desktop and mobile.
-
-    Fixes:
-    - username OR email login
-    - case-insensitive username/email lookup
-    - removes accidental spaces from phone keyboard
-    - keeps one consistent session flow
-    """
+    """Login view that works on both desktop and mobile"""
 
     if request.user.is_authenticated:
         return redirect("dashboard")
@@ -120,112 +155,71 @@ def user_login(request):
                 raw_identifier = data.get("username", "")
                 password = data.get("password", "")
             except json.JSONDecodeError:
-                return JsonResponse(
-                    {"error": "Invalid request data."},
-                    status=400,
-                )
+                return JsonResponse({"error": "Invalid request data."}, status=400)
         else:
             raw_identifier = request.POST.get("username", "")
             password = request.POST.get("password", "")
 
-        identifier = clean_login_value(raw_identifier, is_password=False)
+        identifier = clean_login_value(raw_identifier)
         password = clean_login_value(password, is_password=True)
+        auth_username = get_username_from_identifier(identifier)
 
         if not identifier or not password:
             error_message = "Username/email and password are required."
-
             if is_json_request:
                 return JsonResponse({"error": error_message}, status=400)
-
             messages.error(request, error_message)
-            return render(
-                request,
-                "accounts/login.html",
-                {
-                    "form": AuthenticationForm(),
-                    "site_key": getattr(settings, "RECAPTCHA_SITE_KEY", None),
-                    "mobile_device": mobile_device,
-                },
-            )
+            return render(request, "accounts/login.html", {"form": AuthenticationForm(), "mobile_device": mobile_device})
 
-        login_result = authenticate_identifier(request, identifier, password)
-        user = login_result.user
+        user = authenticate(request, username=auth_username, password=password)
 
         if user is not None:
-            if (
-                not getattr(user, "is_email_verified", False)
-                or not getattr(user, "is_approved", False)
-                or not user.is_active
-            ):
-                request.session["pending_approval_user_id"] = user.id
-                request.session.save()
-
+            if not user.is_active:
+                error_message = "Account is inactive. Please contact admin."
                 if is_json_request:
-                    return JsonResponse(
-                        {
-                            "error": "Your registration is waiting for admin approval.",
-                            "redirect_url": reverse("pending_approval"),
-                        },
-                        status=403,
-                    )
+                    return JsonResponse({"error": error_message}, status=403)
+                messages.error(request, error_message)
+                return render(request, "accounts/login.html", {"form": AuthenticationForm(), "mobile_device": mobile_device})
 
-                messages.warning(request, "Your registration is waiting for admin approval.")
+            if not user.is_email_verified:
+                request.session["pending_verification_user_id"] = user.id
+                request.session.save()
+                warning_message = "Please verify your email first. Check your inbox for the verification link."
+                if is_json_request:
+                    return JsonResponse({"error": warning_message}, status=403)
+                messages.warning(request, warning_message)
                 return redirect("pending_approval")
 
+            # Successful login
             login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-
             request.session.set_expiry(1209600)
             request.session.modified = True
             request.session.save()
 
             next_url = request.POST.get("next") or request.GET.get("next")
-
             if not next_url:
-                next_url = dashboard_redirect_name(user)
+                next_url = get_dashboard_redirect_name(user)
 
             if is_json_request:
                 try:
                     redirect_url = reverse(next_url)
                 except Exception:
                     redirect_url = next_url
-
-                return JsonResponse(
-                    {
-                        "success": True,
-                        "redirect_url": redirect_url,
-                        "user": {
-                            "id": user.id,
-                            "username": user.username,
-                            "email": user.email,
-                            "role": user.role,
-                        },
-                    }
-                )
+                return JsonResponse({"success": True, "redirect_url": redirect_url})
 
             messages.success(request, f"Welcome back, {user.username}!")
             return redirect(next_url)
 
-        error_message = (
-            "Enter the correct username/email and password. "
-            "Check that your phone keyboard did not add spaces or capital letters."
-        )
-
+        error_message = "Invalid username/email or password. Please try again."
         if is_json_request:
             return JsonResponse({"error": error_message}, status=401)
-
         messages.error(request, error_message)
 
     form = AuthenticationForm()
-
-    return render(
-        request,
-        "accounts/login.html",
-        {
-            "form": form,
-            "site_key": getattr(settings, "RECAPTCHA_SITE_KEY", None),
-            "mobile_device": mobile_device,
-        },
-    )
+    return render(request, "accounts/login.html", {
+        "form": form,
+        "mobile_device": mobile_device,
+    })
 
 
 @login_required
@@ -234,35 +228,26 @@ def dashboard(request):
         if not request.user.is_approved:
             messages.warning(request, "Your account is pending admin approval.")
             return redirect("pending_approval")
-
         if not has_student_profile(request.user):
             messages.info(request, "Please complete your profile to continue.")
             return redirect("create_student_profile")
-
         return redirect("student_dashboard")
 
     if request.user.role == "employer":
         if not has_employer_profile(request.user):
             messages.info(request, "Please complete your company profile to continue.")
             return redirect("create_employer_profile")
-
         return redirect("employer_profile")
 
+    # Admin dashboard
     total_students = StudentProfile.objects.count()
     total_employers = EmployerProfile.objects.count()
     total_opportunities = InternshipOpportunity.objects.count()
 
     registered_accounts = User.objects.filter(role__in=["student", "employer"])
     total_registered_accounts = registered_accounts.count()
-
-    pending_registration_count = registered_accounts.filter(
-        Q(is_approved=False) | Q(is_email_verified=False)
-    ).count()
-
-    verified_registration_count = registered_accounts.filter(
-        is_approved=True,
-        is_email_verified=True,
-    ).count()
+    pending_registration_count = registered_accounts.filter(Q(is_approved=False) | Q(is_email_verified=False)).count()
+    verified_registration_count = registered_accounts.filter(is_approved=True, is_email_verified=True).count()
 
     open_opportunities = InternshipOpportunity.objects.filter(status="open").count()
     closed_opportunities = InternshipOpportunity.objects.filter(status="closed").count()
@@ -282,17 +267,11 @@ def dashboard(request):
     email_config = get_active_email_config()
     recent_email_logs = EmailLog.objects.order_by("-created_at")[:8]
 
-    all_required_skills = InternshipOpportunity.objects.values_list(
-        "required_skills",
-        flat=True,
-    )
-
+    all_required_skills = InternshipOpportunity.objects.values_list("required_skills", flat=True)
     skill_counter = Counter()
-
     for skill_text in all_required_skills:
         if skill_text:
             cleaned_text = skill_text.replace("\n", ",").replace(";", ",")
-
             for skill in cleaned_text.split(","):
                 skill = skill.strip().title()
                 if skill:
@@ -302,14 +281,7 @@ def dashboard(request):
     top_skill_labels = [item[0] for item in top_skills]
     top_skill_counts = [item[1] for item in top_skills]
 
-    pending_users = registered_accounts.filter(
-        Q(is_approved=False)
-        | Q(is_email_verified=False)
-        | Q(is_active=False)
-        | Q(otp_code__isnull=False)
-    ).order_by("-date_joined")
-
-    latest_registration_otps = pending_users[:10]
+    pending_users = registered_accounts.filter(Q(is_approved=False) | Q(is_email_verified=False)).order_by("-date_joined")
 
     all_users_data = []
     users = registered_accounts.order_by("-date_joined")
@@ -318,28 +290,17 @@ def dashboard(request):
     for user in users:
         profile_name = "Profile not created"
         profile_status = "Missing"
-
         if user.role == "student":
             profile = StudentProfile.objects.filter(user=user).first()
-
             if profile:
                 profile_name = profile.full_name or user.username
                 profile_status = "Exists"
-
         elif user.role == "employer":
             profile = EmployerProfile.objects.filter(user=user).first()
-
             if profile:
                 profile_name = profile.company_name or user.username
                 profile_status = "Exists"
-
-        all_users_data.append(
-            {
-                "user": user,
-                "profile_name": profile_name,
-                "profile_status": profile_status,
-            }
-        )
+        all_users_data.append({"user": user, "profile_name": profile_name, "profile_status": profile_status})
 
     context = {
         "total_students": total_students,
@@ -364,7 +325,6 @@ def dashboard(request):
         "top_skill_labels": top_skill_labels,
         "top_skill_counts": top_skill_counts,
         "pending_users": pending_users,
-        "latest_registration_otps": latest_registration_otps,
         "recent_registered_users": recent_registered_users,
         "all_users_data": all_users_data,
     }
@@ -372,84 +332,40 @@ def dashboard(request):
     return render(request, "accounts/admin_dashboard.html", context)
 
 
-def build_absolute_url(request, view_name, *args):
-    path = reverse(view_name, args=args)
-    public_site_url = getattr(settings, "PUBLIC_SITE_URL", "").rstrip("/")
-
-    if public_site_url:
-        return f"{public_site_url}{path}"
-
-    return request.build_absolute_uri(path)
-
-
-def build_public_url(path):
-    public_site_url = getattr(
-        settings,
-        "PUBLIC_SITE_URL",
-        "https://ai-attachment-system.onrender.com",
-    ).rstrip("/")
-
-    return f"{public_site_url}{path}"
-
-
 def send_otp_email(request, user):
-    otp = user.generate_otp()
+    """Send OTP email - kept for legacy compatibility"""
+    token = signing.dumps({"user_id": user.id}, salt=REGISTRATION_VERIFY_SALT)
+    verification_url = build_public_url(reverse("verify_registration_email", args=[token]))
 
     success, message = send_system_email(
         subject="Verify Your Email Address",
         message=(
             f"Hello {user.username},\n\n"
-            f"Your verification code is: {otp}\n\n"
-            f"Enter this code on the verification page to confirm that this email belongs to you.\n"
-            f"This code expires in 15 minutes.\n\n"
-            f"If you did not request this, please ignore this email.\n\n"
-            f"AI Internship & Attachment Matching System"
+            f"Click the link below to verify your account:\n"
+            f"{verification_url}\n\n"
+            f"This link expires in 7 days."
         ),
         recipient_list=[user.email],
         button_text="Verify Email",
-        button_url=build_public_url(reverse("verify_otp", args=[user.id])),
+        button_url=verification_url,
     )
-
     return success, message
 
 
-def send_registration_whatsapp_otp(user):
-    if not user.phone_number:
-        return False, "User has no phone number."
-
-    return send_registration_otp_whatsapp(user, user.otp_code)
-
-
-def send_registration_sms_otp(user):
-    return send_registration_otp_sms(user, user.otp_code)
-
-
 def send_registration_received_notification(user):
-    token = signing.dumps(
-        {
-            "user_id": user.id,
-        },
-        salt=REGISTRATION_VERIFY_SALT,
-    )
-    verification_url = build_public_url(
-        reverse(
-            "verify_registration_email",
-            args=[
-                token,
-            ],
-        )
-    )
+    """Send verification email with signed link"""
+    token = signing.dumps({"user_id": user.id}, salt=REGISTRATION_VERIFY_SALT)
+    verification_url = build_public_url(reverse("verify_registration_email", args=[token]))
 
     return send_system_email(
         subject="Verify Your Registration",
         message=(
             f"Hello {user.username},\n\n"
-            f"Your registration has been received by AI Internship & Attachment Matching System.\n\n"
-            f"Press the verification button below to activate your account and continue to your profile.\n\n"
+            f"Thank you for registering. Please verify your email address by clicking the button below.\n\n"
             f"If the button does not open, copy and paste this link into your browser:\n"
             f"{verification_url}\n\n"
-            f"This verification link expires in 7 days.\n\n"
-            f"AI Internship & Attachment Matching System"
+            f"This link expires in 7 days.\n\n"
+            f"If you did not register, please ignore this email."
         ),
         recipient_list=[user.email],
         button_text="Verify and Create Profile",
@@ -458,60 +374,48 @@ def send_registration_received_notification(user):
 
 
 def get_admin_notification_users():
-    return User.objects.filter(
-        Q(role="admin") | Q(is_staff=True) | Q(is_superuser=True),
-        is_active=True,
-    ).distinct()
+    """Get all admin users for notifications"""
+    return User.objects.filter(Q(role="admin") | Q(is_staff=True) | Q(is_superuser=True), is_active=True).distinct()
 
 
 def create_admin_notification(message):
+    """Create notification for all admins"""
     admin_users = get_admin_notification_users()
-
     for admin_user in admin_users:
         Notification.objects.create(user=admin_user, message=message)
-
     return admin_users.count()
 
 
 def notify_admin_new_registration(request, user, user_notified=False):
+    """Notify admins about new registration"""
     role_label = user.role.title()
-
     if user_notified:
         dashboard_message = (
-            f"New {role_label.lower()} registration created: "
-            f"{user.username} ({user.email}). Verification email sent."
+            f"New {role_label.lower()} registration: {user.username} ({user.email}). "
+            f"Verification email sent."
         )
-        admin_instruction = "The system sent the user a verification email link."
     else:
         dashboard_message = (
-            f"New {role_label.lower()} registration created: "
-            f"{user.username} ({user.email}). Verification email delivery needs admin attention."
+            f"New {role_label.lower()} registration: {user.username} ({user.email}). "
+            f"Verification email delivery needs admin attention."
         )
-        admin_instruction = (
-            "The system created the account, but the verification email delivery was not confirmed."
-        )
-
     notified_admins = create_admin_notification(dashboard_message)
 
     if notified_admins == 0:
-        return False, "No active admin account found to receive the dashboard notification."
+        return False, "No active admin account found."
 
     config = get_active_email_config()
-
     if config is None:
-        return True, "Dashboard notification created. No active email configuration found for email alert."
+        return True, "Dashboard notification created."
 
     return send_system_email(
         subject=f"New {role_label} Registration",
         message=(
-            f"A new {role_label.lower()} has registered. {admin_instruction}\n\n"
+            f"A new {role_label.lower()} has registered.\n\n"
             f"Username: {user.username}\n"
             f"Email: {user.email}\n"
             f"Phone: {user.phone_number}\n"
-            f"Role: {role_label}\n\n"
-            f"Admin action:\n"
-            f"Open the admin dashboard to monitor the registration or approve it manually.\n\n"
-            f"After the user presses the email verification link, the account opens the profile form."
+            f"Role: {role_label}"
         ),
         recipient_list=[config.admin_notification_email],
         button_text="Open Admin Dashboard",
@@ -519,50 +423,20 @@ def notify_admin_new_registration(request, user, user_notified=False):
     )
 
 
-def notify_admin_user_verified(request, user):
-    config = get_active_email_config()
-    role_label = user.role.title()
-
-    dashboard_message = (
-        f"{role_label} account verified by OTP and activated: "
-        f"{user.username} ({user.email})."
-    )
-
-    create_admin_notification(dashboard_message)
-
-    if config is None:
-        return False, "No active email configuration found."
-
-    return send_system_email(
-        subject=f"{role_label} Verified and Activated",
-        message=(
-            f"{user.username} has entered the verification code successfully.\n\n"
-            f"Email: {user.email}\n"
-            f"Phone: {user.phone_number}\n"
-            f"Role: {role_label}\n\n"
-            f"The account has been activated automatically and the user can now access their dashboard."
-        ),
-        recipient_list=[config.admin_notification_email],
-        button_text="Open Admin Dashboard",
-        button_url=build_public_url("/dashboard/"),
-    )
-
-
-def activate_verified_user(user):
-    user.is_email_verified = True
-    user.is_approved = True
-    user.is_active = True
-    user.otp_code = None
-    user.otp_created_at = None
-    user.save(
-        update_fields=[
-            "is_email_verified",
-            "is_approved",
-            "is_active",
-            "otp_code",
-            "otp_created_at",
-        ]
-    )
+def log_registration_failure(recipient, subject, message, error):
+    try:
+        EmailLog.objects.create(
+            recipient=recipient,
+            subject=subject,
+            message=message,
+            status="failed",
+            error_message=str(error),
+        )
+    except Exception:
+        logger.exception(
+            "Could not save registration failure email log for recipient=%s",
+            recipient,
+        )
 
 
 def send_registration_verification_safely(request, user):
@@ -576,13 +450,11 @@ def send_registration_verification_safely(request, user):
         )
         notice_success = False
         notice_message = str(error)
-
-        EmailLog.objects.create(
+        log_registration_failure(
             recipient=user.email,
             subject="Verify Your Registration",
             message="Registration verification email failed before delivery.",
-            status="failed",
-            error_message=notice_message,
+            error=error,
         )
 
     try:
@@ -593,12 +465,11 @@ def send_registration_verification_safely(request, user):
             user.id,
             user.email,
         )
-        EmailLog.objects.create(
+        log_registration_failure(
             recipient=user.email,
             subject="New Registration Admin Notification",
             message="Admin notification failed during registration.",
-            status="failed",
-            error_message=str(error),
+            error=error,
         )
 
     return notice_success, notice_message
@@ -609,11 +480,23 @@ def student_register(request):
 
     if request.method == "POST":
         form = StudentRegistrationForm(request.POST)
+        try:
+            form_is_valid = form.is_valid()
+        except Exception as error:
+            email = request.POST.get("email", "")
+            logger.exception("Student registration validation failed for email=%s", email)
+            log_registration_failure(
+                recipient=email,
+                subject="Student Registration Validation Failed",
+                message="Student registration failed while validating submitted form data.",
+                error=error,
+            )
+            messages.error(request, "Registration could not be validated. Admin should check Email logs.")
+            form_is_valid = False
 
-        if form.is_valid():
+        if form_is_valid:
             try:
                 user = form.save()
-
                 notice_success, notice_message = send_registration_verification_safely(request, user)
                 request.session["registration_email_status"] = "sent" if notice_success else "failed"
                 request.session["registration_email_message"] = notice_message
@@ -621,48 +504,30 @@ def student_register(request):
                 if notice_success:
                     messages.success(
                         request,
-                        "Account created. We sent you a verification email. Open it to continue to your profile.",
+                        "Account created! We sent you a verification email. Please check your inbox."
                     )
                 else:
                     messages.warning(
                         request,
-                        "Account created. Admin has been notified, but the verification email could not be sent.",
+                        "Account created but verification email could not be sent. Admin has been notified."
                     )
-
                 return redirect("pending_approval")
-
             except IntegrityError:
-                messages.error(
-                    request,
-                    "This email is already registered. Please log in or use another email.",
-                )
+                messages.error(request, "This email is already registered. Please log in.")
             except Exception as error:
-                logger.exception(
-                    "Student registration failed for email=%s",
-                    form.cleaned_data.get("email", ""),
-                )
-                EmailLog.objects.create(
-                    recipient=form.cleaned_data.get("email", ""),
+                email = form.cleaned_data.get("email", request.POST.get("email", ""))
+                logger.exception("Student registration failed for email=%s", email)
+                log_registration_failure(
+                    recipient=email,
                     subject="Student Registration Failed",
                     message="Student registration failed before verification email delivery.",
-                    status="failed",
-                    error_message=str(error),
+                    error=error,
                 )
-                messages.error(
-                    request,
-                    "Registration could not be completed. Please contact admin with the latest Email log error.",
-                )
+                messages.error(request, "Registration could not be completed. Admin should check Email logs.")
     else:
         form = StudentRegistrationForm()
 
-    return render(
-        request,
-        "accounts/student_register.html",
-        {
-            "form": form,
-            "mobile_device": mobile_device,
-        },
-    )
+    return render(request, "accounts/student_register.html", {"form": form, "mobile_device": mobile_device})
 
 
 def employer_register(request):
@@ -670,11 +535,23 @@ def employer_register(request):
 
     if request.method == "POST":
         form = EmployerRegistrationForm(request.POST)
+        try:
+            form_is_valid = form.is_valid()
+        except Exception as error:
+            email = request.POST.get("email", "")
+            logger.exception("Employer registration validation failed for email=%s", email)
+            log_registration_failure(
+                recipient=email,
+                subject="Employer Registration Validation Failed",
+                message="Employer registration failed while validating submitted form data.",
+                error=error,
+            )
+            messages.error(request, "Registration could not be validated. Admin should check Email logs.")
+            form_is_valid = False
 
-        if form.is_valid():
+        if form_is_valid:
             try:
                 user = form.save()
-
                 notice_success, notice_message = send_registration_verification_safely(request, user)
                 request.session["registration_email_status"] = "sent" if notice_success else "failed"
                 request.session["registration_email_message"] = notice_message
@@ -682,150 +559,102 @@ def employer_register(request):
                 if notice_success:
                     messages.success(
                         request,
-                        "Employer account created. We sent you a verification email. Open it to continue to your profile.",
+                        "Employer account created! We sent you a verification email. Please check your inbox."
                     )
                 else:
                     messages.warning(
                         request,
-                        "Employer account created. Admin has been notified, but the verification email could not be sent.",
+                        "Account created but verification email could not be sent. Admin has been notified."
                     )
-
                 return redirect("pending_approval")
-
             except IntegrityError:
-                messages.error(
-                    request,
-                    "This email is already registered. Please log in or use another email.",
-                )
+                messages.error(request, "This email is already registered. Please log in.")
             except Exception as error:
-                logger.exception(
-                    "Employer registration failed for email=%s",
-                    form.cleaned_data.get("email", ""),
-                )
-                EmailLog.objects.create(
-                    recipient=form.cleaned_data.get("email", ""),
+                email = form.cleaned_data.get("email", request.POST.get("email", ""))
+                logger.exception("Employer registration failed for email=%s", email)
+                log_registration_failure(
+                    recipient=email,
                     subject="Employer Registration Failed",
                     message="Employer registration failed before verification email delivery.",
-                    status="failed",
-                    error_message=str(error),
+                    error=error,
                 )
-                messages.error(
-                    request,
-                    "Registration could not be completed. Please contact admin with the latest Email log error.",
-                )
+                messages.error(request, "Registration could not be completed. Admin should check Email logs.")
     else:
         form = EmployerRegistrationForm()
 
-    return render(
-        request,
-        "accounts/employer_register.html",
-        {
-            "form": form,
-            "mobile_device": mobile_device,
-        },
-    )
+    return render(request, "accounts/employer_register.html", {"form": form, "mobile_device": mobile_device})
 
 
 def verify_otp(request, user_id):
+    """Legacy OTP verification - auto-verifies and redirects to profile"""
     user = get_object_or_404(User, id=user_id)
-    mobile_device = is_mobile_device(request)
 
-    if request.method == "POST":
-        form = OTPVerificationForm(request.POST)
+    # Activate the user
+    user.is_email_verified = True
+    user.is_approved = True
+    user.is_active = True
+    user.save()
 
-        if form.is_valid():
-            entered_otp = form.cleaned_data["otp_code"]
+    # Login the user
+    login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+    request.session.set_expiry(1209600)
+    request.session.modified = True
+    request.session.save()
 
-            otp_has_expired = (
-                user.otp_created_at
-                and timezone.now() > user.otp_created_at + timedelta(minutes=15)
-            )
+    messages.success(request, "Account verified successfully! Please complete your profile.")
 
-            if otp_has_expired:
-                messages.error(
-                    request,
-                    "This code has expired. Please ask the admin to send a new verification code.",
-                )
-
-            elif entered_otp == user.otp_code:
-                activate_verified_user(user)
-
-                notify_admin_user_verified(request, user)
-
-                login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-
-                request.session.set_expiry(1209600)
-                request.session.modified = True
-                request.session.save()
-
-                messages.success(
-                    request,
-                    "Verification successful! Please complete your profile.",
-                )
-
-                if user.role == "student":
-                    return redirect("create_student_profile")
-
-                if user.role == "employer":
-                    return redirect("create_employer_profile")
-
-                return redirect("dashboard")
-
-            else:
-                messages.error(request, "Invalid verification code.")
-    else:
-        form = OTPVerificationForm()
-
-    return render(
-        request,
-        "accounts/verify_otp.html",
-        {
-            "form": form,
-            "user_obj": user,
-            "email_delivery_ready": get_active_email_config() is not None,
-            "mobile_device": mobile_device,
-        },
-    )
+    if user.role == "student":
+        return redirect("create_student_profile")
+    elif user.role == "employer":
+        return redirect("create_employer_profile")
+    return redirect("dashboard")
 
 
 def verify_registration_email(request, token):
+    """Verify user via email link"""
     try:
-        payload = signing.loads(
-            token,
-            salt=REGISTRATION_VERIFY_SALT,
-            max_age=REGISTRATION_VERIFY_MAX_AGE,
-        )
+        payload = signing.loads(token, salt=REGISTRATION_VERIFY_SALT, max_age=REGISTRATION_VERIFY_MAX_AGE)
     except signing.SignatureExpired:
-        messages.error(request, "This verification link has expired. Please contact admin for help.")
+        messages.error(request, "This verification link has expired. Please contact admin for assistance.")
         return redirect("login")
     except signing.BadSignature:
         messages.error(request, "This verification link is invalid.")
         return redirect("login")
 
-    user = get_object_or_404(
-        User,
-        id=payload.get("user_id"),
-    )
+    user = get_object_or_404(User, id=payload.get("user_id"))
 
-    activate_verified_user(user)
+    # Activate user
+    user.is_email_verified = True
+    user.is_approved = True
+    user.is_active = True
+    user.save()
 
-    notify_admin_user_verified(request, user)
-
+    # Login the user
     login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-
     request.session.set_expiry(1209600)
     request.session.modified = True
     request.session.save()
 
-    messages.success(request, "Email verified successfully. Please complete your profile.")
+    messages.success(request, "Email verified successfully! Please complete your profile.")
 
     if user.role == "student":
         return redirect("create_student_profile")
-
-    if user.role == "employer":
+    elif user.role == "employer":
         return redirect("create_employer_profile")
-
     return redirect("dashboard")
+
+
+def pending_approval(request):
+    mobile_device = is_mobile_device(request)
+    registration_email_status = request.session.get("registration_email_status")
+    registration_email_message = request.session.get("registration_email_message", "")
+
+    return render(request, "accounts/pending_approval.html", {
+        "email_delivery_ready": get_active_email_config() is not None,
+        "registration_email_status": registration_email_status,
+        "registration_email_message": registration_email_message,
+        "mobile_device": mobile_device,
+    })
 
 
 @login_required
@@ -835,29 +664,16 @@ def create_student_profile(request):
 
     if request.method == "POST":
         form = StudentProfileForm(request.POST, request.FILES)
-
         if form.is_valid():
             profile = form.save(commit=False)
             profile.user = request.user
             profile.save()
-
-            messages.success(
-                request,
-                "Profile created successfully! Welcome to your dashboard.",
-            )
-
+            messages.success(request, "Profile created successfully! Welcome to your dashboard.")
             return redirect("student_dashboard")
     else:
         form = StudentProfileForm()
 
-    return render(
-        request,
-        "accounts/create_student_profile.html",
-        {
-            "form": form,
-            "user": request.user,
-        },
-    )
+    return render(request, "accounts/create_student_profile.html", {"form": form, "user": request.user})
 
 
 @login_required
@@ -867,243 +683,22 @@ def create_employer_profile(request):
 
     if request.method == "POST":
         form = EmployerProfileForm(request.POST, request.FILES)
-
         if form.is_valid():
             profile = form.save(commit=False)
             profile.user = request.user
             profile.save()
-
-            messages.success(
-                request,
-                "Company profile created successfully! Welcome to your dashboard.",
-            )
-
+            messages.success(request, "Company profile created successfully! Welcome to your dashboard.")
             return redirect("employer_profile")
     else:
         form = EmployerProfileForm()
 
-    return render(
-        request,
-        "employers/create_profile.html",
-        {
-            "form": form,
-            "user": request.user,
-        },
-    )
-
-
-def pending_approval(request):
-    mobile_device = is_mobile_device(request)
-    registration_email_status = request.session.get("registration_email_status")
-    registration_email_message = request.session.get("registration_email_message", "")
-
-    return render(
-        request,
-        "accounts/pending_approval.html",
-        {
-            "email_delivery_ready": get_active_email_config() is not None,
-            "registration_email_status": registration_email_status,
-            "registration_email_message": registration_email_message,
-            "mobile_device": mobile_device,
-        },
-    )
+    return render(request, "employers/create_profile.html", {"form": form, "user": request.user})
 
 
 @login_required
-def send_user_verification_code(request, user_id, channel="email"):
-    if request.user.role != "admin":
-        messages.error(request, "Only administrators can send verification codes.")
-        return redirect("dashboard")
-
-    user = get_object_or_404(
-        User,
-        id=user_id,
-        role__in=["student", "employer"],
-        is_approved=False,
-    )
-
-    if user.is_email_verified:
-        messages.info(
-            request,
-            f"{user.username} is already verified and can now be approved.",
-        )
-        return redirect("dashboard")
-
-    valid_channels = ["email", "whatsapp", "sms"]
-
-    if channel not in valid_channels:
-        messages.error(request, "Invalid verification channel.")
-        return redirect("dashboard")
-
-    delivery_results = []
-    delivery_failed = False
-    successful_deliveries = 0
-
-    if channel in ["email"]:
-        email_success, email_message = send_otp_email(request, user)
-        delivery_results.append(f"Email: {email_message}")
-
-        if not email_success:
-            delivery_failed = True
-        else:
-            successful_deliveries += 1
-    else:
-        user.generate_otp()
-
-    if channel in ["whatsapp"]:
-        whatsapp_success, whatsapp_message = send_registration_whatsapp_otp(user)
-        delivery_results.append(f"WhatsApp: {whatsapp_message}")
-
-        if not whatsapp_success:
-            delivery_failed = True
-        else:
-            successful_deliveries += 1
-
-    if channel == "sms":
-        sms_success, sms_message = send_registration_sms_otp(user)
-        delivery_results.append(f"SMS: {sms_message}")
-
-        if not sms_success:
-            delivery_failed = True
-        else:
-            successful_deliveries += 1
-
-    result_message = " ".join(delivery_results)
-
-    if successful_deliveries == 0:
-        user.otp_code = None
-        user.otp_created_at = None
-        user.save()
-
-        messages.error(
-            request,
-            f"No verification code was delivered to {user.username}. {result_message}",
-        )
-        return redirect("dashboard")
-
-    if delivery_failed:
-        messages.warning(
-            request,
-            f"Verification code process completed for {user.username}, "
-            f"but one channel failed. {result_message}",
-        )
-    else:
-        messages.success(
-            request,
-            f"Verification code sent to {user.username}. {result_message}",
-        )
-
-    return redirect("dashboard")
-
-
-@login_required
-def admin_verify_user(request, user_id):
-    if request.user.role != "admin" and not request.user.is_staff and not request.user.is_superuser:
-        messages.error(request, "Only administrators can verify users.")
-        return redirect("dashboard")
-
-    user = get_object_or_404(
-        User,
-        id=user_id,
-        role__in=["student", "employer"],
-    )
-
-    activate_verified_user(user)
-    notify_admin_user_verified(request, user)
-
-    Notification.objects.create(
-        user=user,
-        message="Your account has been verified by admin. Please complete your profile to continue.",
-    )
-
-    send_system_email(
-        subject="Account Verified",
-        message=(
-            f"Hello {user.username},\n\n"
-            f"Your account has been verified by admin.\n\n"
-            f"You can now log in and complete your profile.\n\n"
-            f"AI Internship & Attachment Matching System"
-        ),
-        recipient_list=[user.email],
-        button_text="Login",
-        button_url=build_public_url(reverse("login")),
-    )
-
-    messages.success(
-        request,
-        f"{user.username} has been verified and activated. They can now complete their profile.",
-    )
-    return redirect("dashboard")
-
-
-@login_required
-def admin_reset_user_password(request, user_id):
-    if request.user.role != "admin" and not request.user.is_staff and not request.user.is_superuser:
-        messages.error(request, "Only administrators can reset user passwords.")
-        return redirect("dashboard")
-
-    user = get_object_or_404(
-        User,
-        id=user_id,
-        role__in=["student", "employer"],
-    )
-
-    temporary_password = "Testpass12345"
-    user.set_password(temporary_password)
-    user.save(update_fields=["password"])
-
-    Notification.objects.create(
-        user=user,
-        message=(
-            "Your password was reset by admin. "
-            "Use the temporary password and change it after login."
-        ),
-    )
-
-    send_system_email(
-        subject="Password Reset by Admin",
-        message=(
-            f"Hello {user.username},\n\n"
-            f"Your password was reset by admin.\n\n"
-            f"Temporary password: {temporary_password}\n\n"
-            f"Use this password to log in on phone or laptop, then update it after login.\n\n"
-            f"AI Internship & Attachment Matching System"
-        ),
-        recipient_list=[user.email],
-        button_text="Login",
-        button_url=build_public_url(reverse("login")),
-    )
-
-    messages.success(
-        request,
-        f"{user.username}'s password was reset to {temporary_password}. "
-        f"Use the same password on phone and laptop.",
-    )
-    return redirect("dashboard")
-
-
-@login_required
-def delete_old_pending_accounts(request):
-    if request.user.role != "admin" and not request.user.is_staff and not request.user.is_superuser:
-        messages.error(request, "Only administrators can delete old accounts.")
-        return redirect("dashboard")
-
-    old_accounts = User.objects.filter(
-        role__in=["student", "employer"]
-    ).filter(
-        Q(is_active=False)
-        | Q(is_email_verified=False)
-        | Q(is_approved=False)
-    )
-
-    deleted_count = old_accounts.count()
-    old_accounts.delete()
-
-    messages.success(
-        request,
-        f"Deleted {deleted_count} old pending/unverified student and employer accounts. Admin accounts were not touched.",
-    )
-    return redirect("dashboard")
+def logout_user(request):
+    logout(request)
+    return redirect("login")
 
 
 @login_required
@@ -1113,66 +708,11 @@ def approve_user(request, user_id):
         return redirect("dashboard")
 
     user = get_object_or_404(User, id=user_id)
+    user.is_approved = True
+    user.is_active = True
+    user.save()
 
-    activate_verified_user(user)
-
-    role_label = user.role.title()
-
-    Notification.objects.create(
-        user=user,
-        message="Your account has been approved. You can now login and access your dashboard.",
-    )
-
-    user_email_success, user_email_message = send_system_email(
-        subject="Account Approved",
-        message=(
-            f"Hello {user.username},\n\n"
-            f"Your account has been approved successfully.\n\n"
-            f"You can now login and access your dashboard.\n\n"
-            f"AI Internship & Attachment Matching System"
-        ),
-        recipient_list=[user.email],
-        button_text="Login to Dashboard",
-        button_url=build_public_url(reverse("login")),
-    )
-
-    create_admin_notification(
-        f"{role_label} account approved by {request.user.username}: "
-        f"{user.username} ({user.email})."
-    )
-
-    config = get_active_email_config()
-    admin_email_success = True
-    admin_email_message = "No admin email configuration found."
-
-    if config is not None:
-        admin_email_success, admin_email_message = send_system_email(
-            subject=f"{role_label} Account Approved",
-            message=(
-                f"{request.user.username} approved {user.username}.\n\n"
-                f"Email: {user.email}\n"
-                f"Phone: {user.phone_number}\n"
-                f"Role: {role_label}\n\n"
-                f"The account is now active."
-            ),
-            recipient_list=[config.admin_notification_email],
-            button_text="Open Admin Dashboard",
-            button_url=build_public_url("/dashboard/"),
-        )
-
-    if not user_email_success or not admin_email_success:
-        messages.warning(
-            request,
-            f"{user.username} approved successfully, but one email notification failed. "
-            f"User email: {user_email_message} Admin email: {admin_email_message}",
-        )
-        return redirect("dashboard")
-
-    messages.success(
-        request,
-        f"{user.username} approved successfully. User and admin notifications sent.",
-    )
-
+    messages.success(request, f"{user.username} approved successfully.")
     return redirect("dashboard")
 
 
@@ -1182,37 +722,11 @@ def reject_user(request, user_id):
         messages.error(request, "Only administrators can reject users.")
         return redirect("dashboard")
 
-    user = User.objects.filter(id=user_id).first()
-
-    if user is None:
-        messages.error(request, "User does not exist.")
-        return redirect("dashboard")
-
-    if user.role == "admin":
-        messages.error(request, "Admin account cannot be rejected here.")
-        return redirect("dashboard")
-
+    user = get_object_or_404(User, id=user_id)
     username = user.username
-    user_email = user.email
-
-    send_system_email(
-        subject="Account Registration Rejected",
-        message=(
-            f"Hello {username},\n\n"
-            f"Your account registration was not approved.\n\n"
-            f"If you believe this was a mistake, please contact the system administrator.\n\n"
-            f"AI Internship & Attachment Matching System"
-        ),
-        recipient_list=[user_email],
-    )
-
     user.delete()
 
-    messages.warning(
-        request,
-        f"{username} has been rejected and removed. Email notification sent.",
-    )
-
+    messages.warning(request, f"{username} has been rejected and removed.")
     return redirect("dashboard")
 
 
@@ -1222,30 +736,76 @@ def delete_user_account(request, user_id):
         messages.error(request, "Only admin can delete users.")
         return redirect("dashboard")
 
-    user = User.objects.filter(id=user_id).first()
-
-    if user is None:
-        messages.error(request, "User does not exist.")
-        return redirect("dashboard")
-
-    if user.role == "admin":
-        messages.error(request, "Admin account cannot be deleted here.")
-        return redirect("dashboard")
-
+    user = get_object_or_404(User, id=user_id)
     username = user.username
     user_role = user.role
-
     user.delete()
 
-    messages.success(
-        request,
-        f"{username} ({user_role}) deleted successfully.",
-    )
+    messages.success(request, f"{username} ({user_role}) deleted successfully.")
+    return redirect("dashboard")
+
+
+@login_required
+def send_user_verification_code(request, user_id, channel="email"):
+    """Admin function to send verification code"""
+    if request.user.role != "admin":
+        messages.error(request, "Only administrators can send verification codes.")
+        return redirect("dashboard")
+
+    user = get_object_or_404(User, id=user_id)
+    success, message = send_otp_email(request, user)
+
+    if success:
+        messages.success(request, f"Verification code sent to {user.username}")
+    else:
+        messages.error(request, f"Failed to send verification code: {message}")
 
     return redirect("dashboard")
 
 
 @login_required
-def logout_user(request):
-    logout(request)
-    return redirect("login")
+def admin_verify_user(request, user_id):
+    """Admin function to manually verify a user"""
+    if request.user.role != "admin":
+        messages.error(request, "Only administrators can verify users.")
+        return redirect("dashboard")
+
+    user = get_object_or_404(User, id=user_id)
+    user.is_email_verified = True
+    user.is_approved = True
+    user.is_active = True
+    user.save()
+
+    messages.success(request, f"{user.username} has been verified successfully.")
+    return redirect("dashboard")
+
+
+@login_required
+def admin_reset_user_password(request, user_id):
+    """Admin function to reset user password"""
+    if request.user.role != "admin":
+        messages.error(request, "Only administrators can reset passwords.")
+        return redirect("dashboard")
+
+    user = get_object_or_404(User, id=user_id)
+    temporary_password = "TempPass123!"
+    user.set_password(temporary_password)
+    user.save()
+
+    messages.success(request, f"Password for {user.username} has been reset to: {temporary_password}")
+    return redirect("dashboard")
+
+
+@login_required
+def delete_old_pending_accounts(request):
+    """Admin function to delete old pending accounts"""
+    if request.user.role != "admin":
+        messages.error(request, "Only administrators can perform this action.")
+        return redirect("dashboard")
+
+    old_accounts = User.objects.filter(role__in=["student", "employer"]).filter(Q(is_active=False) | Q(is_email_verified=False))
+    deleted_count = old_accounts.count()
+    old_accounts.delete()
+
+    messages.success(request, f"Deleted {deleted_count} old pending/unverified accounts.")
+    return redirect("dashboard")
