@@ -179,3 +179,15 @@ if DEBUG:
 else:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+# Email Configuration for Password Reset
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('SMTP_PORT', 587))
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('SMTP_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('SMTP_PASS')
+DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_FROM', 'noreply@aiinternship.com')
+
+# Frontend URL for password reset links
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://your-app.onrender.com')

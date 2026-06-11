@@ -232,6 +232,10 @@
                 Login
             </button>
 
+            <p style="text-align:center; margin-top:15px;">
+    <a href="{% url 'password_reset' %}" style="color:#007bff;">Forgot Password?</a>
+</p>
+
             {% if next %}
                 <input type="hidden" name="next" value="{{ next }}">
             {% endif %}

@@ -22,10 +22,8 @@ from django.views.decorators.http import require_http_methods
 
 from students.models import StudentProfile
 from students.forms import StudentProfileForm
-
 from employers.models import EmployerProfile
 from employers.forms import EmployerProfileForm
-
 from internships.models import InternshipOpportunity, Application
 
 from notifications.models import Notification, EmailLog
@@ -43,7 +41,6 @@ REGISTRATION_VERIFY_MAX_AGE = 60 * 60 * 24 * 7
 
 def is_mobile_device(request):
     user_agent = request.META.get("HTTP_USER_AGENT", "").lower()
-
     mobile_keywords = [
         "mobile",
         "android",
@@ -59,7 +56,6 @@ def is_mobile_device(request):
         "tecno",
         "infinix",
     ]
-
     return any(keyword in user_agent for keyword in mobile_keywords)
 
 
@@ -148,11 +144,9 @@ def send_registration_received_notification(user):
         subject="Verify Your Registration",
         message=(
             f"Hello {user.username},\n\n"
-            f"Thank you for registering on AI Attachment System.\n\n"
-            f"Please verify your email address by clicking the link below:\n\n"
-            f"{verification_url}\n\n"
-            f"This link expires in 7 days.\n\n"
-            f"If you did not create this account, you can ignore this email."
+            f"Thank you for registering. Please verify your email address.\n\n"
+            f"Verification link:\n{verification_url}\n\n"
+            f"This link expires in 7 days."
         ),
         recipient_list=[user.email],
         button_text="Verify Email",
@@ -315,30 +309,7 @@ def user_login(request):
 
         if user is not None:
             if not user.is_active:
-                error_message = (
-                    "Your account is not active yet. "
-                    "Please verify your email before logging in."
-                )
-
-                if is_json_request:
-                    return JsonResponse({"error": error_message}, status=403)
-
-                messages.error(request, error_message)
-
-                return render(
-                    request,
-                    "accounts/login.html",
-                    {
-                        "form": AuthenticationForm(),
-                        "mobile_device": mobile_device,
-                    },
-                )
-
-            if not getattr(user, "is_email_verified", False):
-                error_message = (
-                    "Your email is not verified. "
-                    "Please check your email and verify your account."
-                )
+                error_message = "Account is inactive. Please contact admin."
 
                 if is_json_request:
                     return JsonResponse({"error": error_message}, status=403)
@@ -362,6 +333,12 @@ def user_login(request):
 
             request.session.set_expiry(1209600)
             request.session.modified = True
+
+            if not getattr(user, "is_email_verified", False):
+                messages.warning(
+                    request,
+                    "Your email is not verified yet. You can continue, but please verify it later.",
+                )
 
             next_url = get_safe_next_url(request, fallback="dashboard")
 
@@ -418,10 +395,7 @@ def dashboard(request):
         return redirect("employer_profile")
 
     if not is_admin_user(request.user):
-        messages.error(
-            request,
-            "Your account role is not recognized. Please contact admin.",
-        )
+        messages.error(request, "Your account role is not recognized. Please contact admin.")
         return redirect("login")
 
     total_students = StudentProfile.objects.count()
@@ -577,7 +551,7 @@ def student_register(request):
                 user = form.save(commit=False)
 
                 user.role = "student"
-                user.is_active = False
+                user.is_active = True
                 user.is_approved = False
 
                 if hasattr(user, "is_email_verified"):
@@ -585,23 +559,20 @@ def student_register(request):
 
                 user.save()
 
-                notice_success, notice_message = send_registration_verification_safely(
+                send_registration_verification_safely(request, user)
+
+                login(
                     request,
                     user,
+                    backend="django.contrib.auth.backends.ModelBackend",
                 )
 
-                if notice_success:
-                    messages.success(
-                        request,
-                        "Account created. Please check your email and verify your account before logging in.",
-                    )
-                else:
-                    messages.warning(
-                        request,
-                        "Account created, but verification email was not sent. Please contact admin.",
-                    )
+                messages.success(
+                    request,
+                    "Account created successfully. Please complete your profile.",
+                )
 
-                return redirect("pending_approval")
+                return redirect("create_student_profile")
 
             except IntegrityError:
                 messages.error(
@@ -611,6 +582,7 @@ def student_register(request):
 
             except Exception as error:
                 logger.exception("Student registration failed.")
+
                 messages.error(
                     request,
                     f"Registration failed: {error}",
@@ -646,7 +618,7 @@ def employer_register(request):
                 user = form.save(commit=False)
 
                 user.role = "employer"
-                user.is_active = False
+                user.is_active = True
                 user.is_approved = False
 
                 if hasattr(user, "is_email_verified"):
@@ -654,23 +626,20 @@ def employer_register(request):
 
                 user.save()
 
-                notice_success, notice_message = send_registration_verification_safely(
+                send_registration_verification_safely(request, user)
+
+                login(
                     request,
                     user,
+                    backend="django.contrib.auth.backends.ModelBackend",
                 )
 
-                if notice_success:
-                    messages.success(
-                        request,
-                        "Employer account created. Please check your email and verify your account before logging in.",
-                    )
-                else:
-                    messages.warning(
-                        request,
-                        "Employer account created, but verification email was not sent. Please contact admin.",
-                    )
+                messages.success(
+                    request,
+                    "Employer account created successfully. Please complete your company profile.",
+                )
 
-                return redirect("pending_approval")
+                return redirect("create_employer_profile")
 
             except IntegrityError:
                 messages.error(
@@ -680,6 +649,7 @@ def employer_register(request):
 
             except Exception as error:
                 logger.exception("Employer registration failed.")
+
                 messages.error(
                     request,
                     f"Registration failed: {error}",
@@ -732,12 +702,28 @@ def verify_registration_email(request, token):
     user.is_active = True
     user.save()
 
-    messages.success(
+    login(
         request,
-        "Email verified successfully. You can now log in.",
+        user,
+        backend="django.contrib.auth.backends.ModelBackend",
     )
 
-    return redirect("login")
+    messages.success(
+        request,
+        "Email verified successfully.",
+    )
+
+    if user.role == "student":
+        if has_student_profile(user):
+            return redirect("student_dashboard")
+        return redirect("create_student_profile")
+
+    if user.role == "employer":
+        if has_employer_profile(user):
+            return redirect("employer_profile")
+        return redirect("create_employer_profile")
+
+    return redirect("dashboard")
 
 
 def pending_approval(request):
@@ -754,10 +740,7 @@ def pending_approval(request):
 @login_required
 def create_student_profile(request):
     if getattr(request.user, "role", "") != "student" and not is_admin_user(request.user):
-        messages.error(
-            request,
-            "Only student accounts can create a student profile.",
-        )
+        messages.error(request, "Only student accounts can create a student profile.")
         return redirect("dashboard")
 
     if has_student_profile(request.user):
@@ -800,10 +783,7 @@ def create_student_profile(request):
 @login_required
 def create_employer_profile(request):
     if getattr(request.user, "role", "") != "employer" and not is_admin_user(request.user):
-        messages.error(
-            request,
-            "Only employer accounts can create a company profile.",
-        )
+        messages.error(request, "Only employer accounts can create a company profile.")
         return redirect("dashboard")
 
     if has_employer_profile(request.user):
@@ -898,10 +878,7 @@ def delete_user_account(request, user_id):
     user = get_object_or_404(User, id=user_id)
 
     if user == request.user:
-        messages.error(
-            request,
-            "You cannot delete your own account while logged in.",
-        )
+        messages.error(request, "You cannot delete your own account while logged in.")
         return redirect("dashboard")
 
     username = user.username
@@ -988,3 +965,101 @@ def delete_old_pending_accounts(request):
     )
 
     return redirect("dashboard")
+
+# ==================== PASSWORD RESET VIEWS ====================
+
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import send_mail
+
+
+def password_reset_request(request):
+    """Step 1: User requests password reset by entering email"""
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # Don't reveal if email exists for security
+            messages.success(request, 'If an account exists with that email, a reset link has been sent.')
+            return redirect('password_reset_done')
+        
+        # Generate token and uid
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        
+        # Build reset link
+        reset_link = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
+        
+        # Send email
+        subject = 'Password Reset Request - AI Internship'
+        message = f"""
+        Hello {user.username or user.email},
+        
+        You requested a password reset for your AI Internship account.
+        
+        Click the link below to reset your password:
+        {reset_link}
+        
+        This link expires in 24 hours.
+        
+        If you didn't request this, please ignore this email.
+        
+        Best regards,
+        AI Internship Team
+        """
+        
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            messages.success(request, 'Password reset link sent to your email!')
+        except Exception as e:
+            logger.error(f"Failed to send password reset email: {str(e)}")
+            messages.error(request, 'Failed to send email. Please try again later.')
+        
+        return redirect('password_reset_done')
+    
+    return render(request, 'accounts/password_reset_form.html')
+
+
+def password_reset_done(request):
+    """Step 2: After email is sent, show confirmation page"""
+    return render(request, 'accounts/password_reset_done.html')
+
+
+def password_reset_confirm(request, uidb64, token):
+    """Step 3: User clicks reset link, verify token and show reset form"""
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+    
+    if user and default_token_generator.check_token(user, token):
+        if request.method == 'POST':
+            new_password = request.POST.get('new_password')
+            confirm_password = request.POST.get('confirm_password')
+            
+            if new_password == confirm_password and len(new_password) >= 6:
+                user.set_password(new_password)
+                user.save()
+                messages.success(request, 'Password reset successful! Please login with your new password.')
+                return redirect('login')
+            else:
+                messages.error(request, 'Passwords do not match or password is too short (min 6 characters).')
+        
+        return render(request, 'accounts/password_reset_confirm.html', {'valid': True})
+    else:
+        return render(request, 'accounts/password_reset_confirm.html', {'valid': False})
+
+
+def password_reset_complete(request):
+    """Step 4: After password reset success"""
+    return render(request, 'accounts/password_reset_complete.html')
