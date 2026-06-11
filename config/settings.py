@@ -3,10 +3,11 @@ Django settings for config project.
 """
 
 import os
-import sys  # ← ADD THIS LINE - FIXES THE ERROR
 from pathlib import Path
-
 import certifi
+
+os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -123,14 +124,12 @@ if 'whitenoise' in globals():
         'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
     }
 
-# Media files
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Custom user model
 AUTH_USER_MODEL = 'accounts.User'
 
-# Authentication
 AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
@@ -138,31 +137,26 @@ LOGOUT_REDIRECT_URL = 'login'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ==============================================================
-# EMAIL CONFIGURATION
-# ==============================================================
+# ============================================================
+# EMAIL SETTINGS
+# ============================================================
 
-EMAIL_BACKEND = os.environ.get(
-    'EMAIL_BACKEND',
-    'django.core.mail.backends.smtp.EmailBackend'
-)
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get(
-    'DEFAULT_FROM_EMAIL',
-    EMAIL_HOST_USER
-)
-ADMIN_NOTIFICATION_EMAIL = os.environ.get(
-    'ADMIN_NOTIFICATION_EMAIL',
-    EMAIL_HOST_USER
-)
-EMAIL_ALLOW_INSECURE_SMTP_SSL = os.environ.get(
-    'EMAIL_ALLOW_INSECURE_SMTP_SSL',
-    'False'
-).lower() == 'true'
+PUBLIC_SITE_URL = "http://127.0.0.1:8000"
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = "georgesultan931@gmail.com"
+EMAIL_HOST_PASSWORD = "dyrdzasnfjrnkhma"
+
+DEFAULT_FROM_EMAIL = "AI Attachment System <georgesultan931@gmail.com>"
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+ADMIN_NOTIFICATION_EMAIL = EMAIL_HOST_USER
+EMAIL_ALLOW_INSECURE_SMTP_SSL = False
 # ==============================================================
 # SESSION SETTINGS FOR MOBILE COMPATIBILITY
 # ==============================================================

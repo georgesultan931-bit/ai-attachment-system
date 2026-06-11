@@ -1,119 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pending Approval | AI Attachment System</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .pending-container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 500px;
-            padding: 40px;
-            text-align: center;
-        }
-        
-        .icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-        }
-        
-        h2 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-        
-        .message {
-            color: #666;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-        
-        .warning-box {
-            background: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-            text-align: left;
-        }
-        
-        .button {
-            display: inline-block;
-            padding: 12px 24px;
-            background: #667eea;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            margin-top: 10px;
-        }
-        
-        @media (max-width: 768px) {
-            .pending-container {
-                padding: 30px 20px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="pending-container">
-        <div class="icon">⏳</div>
-        <h2>Registration Under Review</h2>
-        
-        <div class="message">
-            Your registration has been received.
-            {% if registration_email_status == "sent" %}
-                Open the verification email to continue.
-            {% else %}
-                The email delivery status needs admin attention.
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 620px;">
+    <div class="card border-0 shadow-lg rounded-4">
+        <div class="card-body p-4 p-md-5 text-center">
+            <h2 class="mb-3">Check Your Email</h2>
+
+            <p class="text-muted mb-4">
+                Your account has been created. Please open your email inbox and click the verification link to activate your account.
+            </p>
+
+            {% if not email_delivery_ready %}
+                <div class="alert alert-warning text-start">
+                    Email delivery configuration is not ready. If you are testing locally, check your PowerShell terminal for the verification link.
+                </div>
             {% endif %}
+
+            <a href="{% url 'login' %}" class="btn btn-primary btn-lg w-100">
+                Back to Login
+            </a>
         </div>
-        
-        {% if registration_email_status == "sent" %}
-            <div class="warning-box">
-                <strong>Check Your Email</strong><br>
-                We sent a verification link to your email address. Press the link to verify your account 
-                and go straight to your profile form.
-            </div>
-        {% elif registration_email_status == "failed" %}
-            <div class="warning-box">
-                <strong>Email Delivery Failed</strong><br>
-                Your account was created, but the verification email could not be delivered.
-                Admin should open Email logs and check the latest error message.
-            </div>
-        {% elif not email_delivery_ready %}
-            <div class="warning-box">
-                <strong>Email Configuration Notice</strong><br>
-                The email system is not fully configured. Admin can still approve your account 
-                from the dashboard, then you can log in and create your profile.
-            </div>
-        {% else %}
-            <div class="warning-box">
-                <strong>Registration Received</strong><br>
-                If you do not receive a verification email, admin should check Email logs for the latest delivery status.
-            </div>
-        {% endif %}
-        
-        <a href="{% url 'home' %}" class="button">Back to Home</a>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
