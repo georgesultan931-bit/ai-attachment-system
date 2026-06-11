@@ -22,7 +22,7 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = [host.strip() for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',') if host.strip()]
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()]
-PUBLIC_SITE_URL = os.environ.get('PUBLIC_SITE_URL', 'https://ai-attachment-system.onrender.com').rstrip('/')
+PUBLIC_SITE_URL = os.environ.get('PUBLIC_SITE_URL', 'https://ai-attachment-system-1.onrender.com').rstrip('/')
 
 # HTTPS Settings
 if not DEBUG:
@@ -141,22 +141,25 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # EMAIL SETTINGS
 # ============================================================
 
-PUBLIC_SITE_URL = "http://127.0.0.1:8000"
-
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-
-EMAIL_HOST_USER = "georgesultan931@gmail.com"
-EMAIL_HOST_PASSWORD = "dyrdzasnfjrnkhma"
-
-DEFAULT_FROM_EMAIL = "AI Attachment System <georgesultan931@gmail.com>"
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.smtp.EmailBackend',
+)
+EMAIL_HOST = os.environ.get('EMAIL_HOST') or os.environ.get('SMTP_HOST') or 'smtp.gmail.com'
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT') or os.environ.get('SMTP_PORT') or '587')
+EMAIL_USE_TLS = str(os.environ.get('EMAIL_USE_TLS', 'True')).lower() == 'true'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER') or os.environ.get('SMTP_USER') or ''
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD') or os.environ.get('SMTP_PASS') or ''
+DEFAULT_FROM_EMAIL = (
+    os.environ.get('DEFAULT_FROM_EMAIL')
+    or os.environ.get('EMAIL_FROM')
+    or EMAIL_HOST_USER
+)
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
-
-ADMIN_NOTIFICATION_EMAIL = EMAIL_HOST_USER
-EMAIL_ALLOW_INSECURE_SMTP_SSL = False
+ADMIN_NOTIFICATION_EMAIL = os.environ.get('ADMIN_NOTIFICATION_EMAIL') or EMAIL_HOST_USER
+EMAIL_ALLOW_INSECURE_SMTP_SSL = str(
+    os.environ.get('EMAIL_ALLOW_INSECURE_SMTP_SSL', 'False')
+).lower() == 'true'
 # ==============================================================
 # SESSION SETTINGS FOR MOBILE COMPATIBILITY
 # ==============================================================
@@ -180,14 +183,5 @@ else:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
-# Email Configuration for Password Reset
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
-EMAIL_PORT = int(os.environ.get('SMTP_PORT', 587))
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.environ.get('SMTP_USER')
-EMAIL_HOST_PASSWORD = os.environ.get('SMTP_PASS')
-DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_FROM', 'noreply@aiinternship.com')
-
 # Frontend URL for password reset links
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://your-app.onrender.com')
+FRONTEND_URL = os.environ.get('FRONTEND_URL', PUBLIC_SITE_URL)

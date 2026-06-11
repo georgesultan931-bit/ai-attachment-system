@@ -151,15 +151,18 @@ def get_active_email_config():
     # SECOND: Fall back to environment variables/settings (for Render setup)
     email_host = _clean_setting(
         os.environ.get('EMAIL_HOST')
+        or os.environ.get('SMTP_HOST')
         or getattr(settings, 'EMAIL_HOST', '')
     )
     email_host_user = _clean_setting(
         os.environ.get('EMAIL_HOST_USER')
+        or os.environ.get('SMTP_USER')
         or os.environ.get('EMAIL_USER')
         or getattr(settings, 'EMAIL_HOST_USER', '')
     )
     email_host_password = _clean_setting(
         os.environ.get('EMAIL_HOST_PASSWORD')
+        or os.environ.get('SMTP_PASS')
         or os.environ.get('EMAIL_PASS')
         or getattr(settings, 'EMAIL_HOST_PASSWORD', '')
     )
@@ -168,7 +171,11 @@ def get_active_email_config():
         print(f"Using email config from ENVIRONMENT: {email_host}")
         return SimpleNamespace(
             email_host=email_host,
-            email_port=int(os.environ.get('EMAIL_PORT', getattr(settings, 'EMAIL_PORT', 587))),
+            email_port=int(
+                os.environ.get('EMAIL_PORT')
+                or os.environ.get('SMTP_PORT')
+                or getattr(settings, 'EMAIL_PORT', 587)
+            ),
             email_use_tls=str(
                 os.environ.get('EMAIL_USE_TLS', getattr(settings, 'EMAIL_USE_TLS', True))
             ).lower() == 'true',
@@ -176,6 +183,7 @@ def get_active_email_config():
             email_host_password=email_host_password,
             default_from_email=_clean_setting(
                 os.environ.get('DEFAULT_FROM_EMAIL')
+                or os.environ.get('EMAIL_FROM')
                 or getattr(settings, 'DEFAULT_FROM_EMAIL', '')
                 or email_host_user
             ),

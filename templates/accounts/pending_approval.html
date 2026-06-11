@@ -10,9 +10,24 @@
                 Your account has been created. Please open your email inbox and click the verification link to activate your account.
             </p>
 
-            {% if not email_delivery_ready %}
+            {% if registration_email_status == "failed" %}
+                <div class="alert alert-warning text-start">
+                    <strong>Email Delivery Failed</strong><br>
+                    Your account was created, but the verification email could not be delivered.
+                    Admin should open Email logs and check the latest error message.
+                    {% if registration_email_message %}
+                        <hr>
+                        <small>{{ registration_email_message }}</small>
+                    {% endif %}
+                </div>
+            {% elif not email_delivery_ready %}
                 <div class="alert alert-warning text-start">
                     Email delivery configuration is not ready. If you are testing locally, check your PowerShell terminal for the verification link.
+                </div>
+            {% else %}
+                <div class="alert alert-warning text-start">
+                    <strong>Check Your Email</strong><br>
+                    We sent a verification link to your email address. Open the link to verify your account and continue to your profile.
                 </div>
             {% endif %}
 

@@ -117,6 +117,11 @@ def build_public_url(path):
     return f"{public_site_url}{path}"
 
 
+def build_absolute_url(request, view_name, *args):
+    path = reverse(view_name, args=args)
+    return build_public_url(path)
+
+
 def get_safe_next_url(request, fallback="dashboard"):
     next_url = request.POST.get("next") or request.GET.get("next")
 
@@ -173,6 +178,40 @@ def create_admin_notification(message):
     return admin_users.count()
 
 
+def notify_admin_new_registration(request, user, user_notified=False):
+    role_label = getattr(user, "role", "user").title()
+    email_status = "Verification email sent." if user_notified else (
+        "Verification email delivery needs admin attention."
+    )
+    dashboard_message = (
+        f"New {role_label.lower()} registration: "
+        f"{user.username} ({user.email}). {email_status}"
+    )
+
+    notified_admins = create_admin_notification(dashboard_message)
+
+    if notified_admins == 0:
+        return False, "No active admin account found."
+
+    config = get_active_email_config()
+    if config is None:
+        return True, "Dashboard notification created."
+
+    return send_system_email(
+        subject=f"New {role_label} Registration",
+        message=(
+            f"A new {role_label.lower()} has registered.\n\n"
+            f"Username: {user.username}\n"
+            f"Email: {user.email}\n"
+            f"Phone: {user.phone_number}\n"
+            f"Role: {role_label}"
+        ),
+        recipient_list=[config.admin_notification_email],
+        button_text="Open Admin Dashboard",
+        button_url=build_public_url("/dashboard/"),
+    )
+
+
 def log_registration_failure(recipient, subject, message, error):
     try:
         EmailLog.objects.create(
@@ -210,12 +249,7 @@ def send_registration_verification_safely(request, user):
         )
 
     try:
-        role_label = getattr(user, "role", "user").title()
-
-        create_admin_notification(
-            f"New {role_label.lower()} registration: "
-            f"{user.username} ({user.email})."
-        )
+        notify_admin_new_registration(request, user, notice_success)
 
     except Exception as error:
         logger.exception("Admin notification failed.")
@@ -551,7 +585,7 @@ def student_register(request):
                 user = form.save(commit=False)
 
                 user.role = "student"
-                user.is_active = True
+                user.is_active = False
                 user.is_approved = False
 
                 if hasattr(user, "is_email_verified"):
@@ -559,20 +593,21 @@ def student_register(request):
 
                 user.save()
 
-                send_registration_verification_safely(request, user)
-
-                login(
+                notice_success, notice_message = send_registration_verification_safely(
                     request,
                     user,
-                    backend="django.contrib.auth.backends.ModelBackend",
                 )
+                request.session["registration_email_status"] = (
+                    "sent" if notice_success else "failed"
+                )
+                request.session["registration_email_message"] = notice_message
 
                 messages.success(
                     request,
-                    "Account created successfully. Please complete your profile.",
+                    "Account created successfully. Please verify your email.",
                 )
 
-                return redirect("create_student_profile")
+                return redirect("pending_approval")
 
             except IntegrityError:
                 messages.error(
@@ -618,7 +653,7 @@ def employer_register(request):
                 user = form.save(commit=False)
 
                 user.role = "employer"
-                user.is_active = True
+                user.is_active = False
                 user.is_approved = False
 
                 if hasattr(user, "is_email_verified"):
@@ -626,20 +661,21 @@ def employer_register(request):
 
                 user.save()
 
-                send_registration_verification_safely(request, user)
-
-                login(
+                notice_success, notice_message = send_registration_verification_safely(
                     request,
                     user,
-                    backend="django.contrib.auth.backends.ModelBackend",
                 )
+                request.session["registration_email_status"] = (
+                    "sent" if notice_success else "failed"
+                )
+                request.session["registration_email_message"] = notice_message
 
                 messages.success(
                     request,
-                    "Employer account created successfully. Please complete your company profile.",
+                    "Employer account created successfully. Please verify your email.",
                 )
 
-                return redirect("create_employer_profile")
+                return redirect("pending_approval")
 
             except IntegrityError:
                 messages.error(
@@ -732,6 +768,8 @@ def pending_approval(request):
         "accounts/pending_approval.html",
         {
             "email_delivery_ready": get_active_email_config() is not None,
+            "registration_email_status": request.session.get("registration_email_status"),
+            "registration_email_message": request.session.get("registration_email_message"),
             "mobile_device": is_mobile_device(request),
         },
     )
