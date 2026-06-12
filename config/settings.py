@@ -143,26 +143,25 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 PUBLIC_SITE_URL = os.environ.get(
     "PUBLIC_SITE_URL",
-    "http://127.0.0.1:8000"
-)
+    "https://ai-attachment-system-1.onrender.com"
+).rstrip("/")
 
 EMAIL_BACKEND = os.environ.get(
     "EMAIL_BACKEND",
-    "django.core.mail.backends.console.EmailBackend"
+    "django.core.mail.backends.smtp.EmailBackend"
 )
 
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
-EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST = os.environ.get("EMAIL_HOST") or os.environ.get("SMTP_HOST") or "smtp.gmail.com"
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT") or os.environ.get("SMTP_PORT") or "587")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() == "true"
 EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "False").lower() == "true"
 
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER") or os.environ.get("SMTP_USER") or ""
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD") or os.environ.get("SMTP_PASS") or ""
 
 DEFAULT_FROM_EMAIL = os.environ.get(
-    "DEFAULT_FROM_EMAIL",
-    f"AI Attachment System <{EMAIL_HOST_USER}>"
-)
+    "DEFAULT_FROM_EMAIL"
+) or os.environ.get("EMAIL_FROM") or EMAIL_HOST_USER
 
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
@@ -200,3 +199,4 @@ else:
 
 # Frontend URL for password reset links
 FRONTEND_URL = os.environ.get('FRONTEND_URL', PUBLIC_SITE_URL)
+
