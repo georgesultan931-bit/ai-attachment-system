@@ -725,6 +725,20 @@
 
             {% endif %}
 
+            {% if user.role == 'admin' %}
+
+                <div class="sidebar-section">
+                    Admin
+                </div>
+
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'admin_profile_settings' %}active{% endif %}"
+                   href="{% url 'admin_profile_settings' %}">
+                    <i class="bi bi-person-square"></i>
+                    Profile Image
+                </a>
+
+            {% endif %}
+
             <div class="quick-panel">
 
                 <small>

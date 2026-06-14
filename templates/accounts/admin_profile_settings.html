@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+    .admin-profile-card {
+        max-width: 760px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        box-shadow: 0 16px 36px rgba(15, 23, 42, .08);
+    }
+
+    .admin-profile-preview {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #eff6ff;
+        background: #e5e7eb;
+    }
+
+    .admin-profile-placeholder {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #2563eb, #0f766e);
+        color: #ffffff;
+        font-size: 2.4rem;
+        font-weight: 900;
+        border: 4px solid #eff6ff;
+    }
+
+    @media (max-width: 576px) {
+        .admin-profile-card .card-body {
+            padding: 20px !important;
+        }
+    }
+</style>
+
+<div class="card admin-profile-card">
+    <div class="card-body p-4 p-md-5">
+        <div class="d-flex flex-column flex-md-row align-items-md-center gap-4 mb-4">
+            <div>
+                {% if request.user.profile_picture %}
+                    <img src="{{ request.user.profile_picture.url }}"
+                         alt="{{ request.user.username }}"
+                         class="admin-profile-preview">
+                {% else %}
+                    <div class="admin-profile-placeholder">
+                        {{ request.user.username|slice:":1"|upper }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div>
+                <span class="badge text-bg-primary mb-2">Admin Profile</span>
+                <h2 class="fw-bold mb-1">Update Profile Image</h2>
+                <p class="text-muted mb-0">
+                    Upload the image that appears in your admin sidebar and dashboard account area.
+                </p>
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold" for="{{ form.profile_picture.id_for_label }}">
+                    Profile image
+                </label>
+                {{ form.profile_picture }}
+                {% if form.profile_picture.errors %}
+                    <div class="text-danger small mt-2">
+                        {{ form.profile_picture.errors|striptags }}
+                    </div>
+                {% endif %}
+                <div class="form-text">
+                    Use JPG, PNG or WebP. Maximum size: 3MB.
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-cloud-arrow-up me-1"></i>
+                    Save Image
+                </button>
+
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                    Back to Dashboard
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

@@ -419,3 +419,37 @@ class OTPVerificationForm(forms.Form):
             )
 
         return otp_code
+
+class AdminProfileImageForm(forms.ModelForm):
+
+    class Meta:
+        model = User
+        fields = [
+            'profile_picture',
+        ]
+        widgets = {
+            'profile_picture': forms.ClearableFileInput(
+                attrs={
+                    'class': 'form-control',
+                    'accept': 'image/*',
+                }
+            ),
+        }
+
+    def clean_profile_picture(self):
+        image = self.cleaned_data.get('profile_picture')
+
+        if not image:
+            return image
+
+        max_size = 3 * 1024 * 1024
+
+        if image.size > max_size:
+            raise ValidationError('Profile image must be 3MB or smaller.')
+
+        content_type = getattr(image, 'content_type', '')
+
+        if content_type and not content_type.startswith('image/'):
+            raise ValidationError('Please upload a valid image file.')
+
+        return image

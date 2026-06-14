@@ -8,6 +8,7 @@ urlpatterns = [
     path('login/', views.user_login, name='login'),
     path('logout/', views.logout_user, name='logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('admin/profile/', views.admin_profile_settings, name='admin_profile_settings'),
     path('student/register/', views.student_register, name='student_register'),
     path('employer/register/', views.employer_register, name='employer_register'),
     path('verify-registration/<token>/', views.verify_registration_email, name='verify_registration_email'),

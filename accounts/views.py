@@ -29,7 +29,7 @@ from internships.models import InternshipOpportunity, Application
 from notifications.models import Notification, EmailLog
 from notifications.email_service import get_active_email_config, send_system_email
 
-from .forms import StudentRegistrationForm, EmployerRegistrationForm
+from .forms import AdminProfileImageForm, StudentRegistrationForm, EmployerRegistrationForm
 from .models import User
 
 
@@ -571,6 +571,36 @@ def dashboard(request):
     )
 
 
+
+@login_required
+def admin_profile_settings(request):
+    if not is_admin_user(request.user):
+        messages.error(request, "Only admin users can update the admin profile image.")
+        return redirect("dashboard")
+
+    if request.method == "POST":
+        form = AdminProfileImageForm(
+            request.POST,
+            request.FILES,
+            instance=request.user,
+        )
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Admin profile image updated successfully.")
+            return redirect("admin_profile_settings")
+    else:
+        form = AdminProfileImageForm(instance=request.user)
+
+    return render(
+        request,
+        "accounts/admin_profile_settings.html",
+        {
+            "form": form,
+        },
+    )
+
+
 def student_register(request):
     if request.user.is_authenticated:
         return redirect("dashboard")
@@ -1102,6 +1132,3 @@ def password_reset_confirm(request, uidb64, token):
 def password_reset_complete(request):
     """Step 4: After password reset success"""
     return render(request, 'accounts/password_reset_complete.html')
-
-
-
