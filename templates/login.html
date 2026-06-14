@@ -4,288 +4,460 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Login | AI Attachment System</title>
+
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(15, 118, 110, .16), transparent 34%),
+                linear-gradient(135deg, #eef6f4 0%, #f8fafc 48%, #fff7ed 100%);
+            color: #0f172a;
+            padding: 24px;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        .login-shell {
+            width: min(1040px, 100%);
+            min-height: calc(100vh - 48px);
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(360px, .8fr);
+            gap: 24px;
             align-items: center;
-            padding: 20px;
         }
-        
-        .login-container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 450px;
-            padding: 40px;
-            animation: fadeIn 0.5s ease-out;
+
+        .login-panel,
+        .login-card {
+            border-radius: 8px;
+            background: rgba(255, 255, 255, .88);
+            border: 1px solid rgba(203, 213, 225, .82);
+            box-shadow: 0 24px 60px rgba(15, 23, 42, .12);
         }
-        
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+
+        .login-panel {
+            min-height: 620px;
+            padding: clamp(28px, 5vw, 54px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background:
+                linear-gradient(135deg, rgba(12, 24, 38, .94), rgba(15, 118, 110, .84)),
+                linear-gradient(135deg, #0f172a, #0f766e);
+            color: #ffffff;
         }
-        
-        .logo {
-            text-align: center;
+
+        .back-link {
+            align-self: flex-start;
+            display: inline-flex;
+            align-items: center;
+            min-height: 38px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, .24);
+            padding: 8px 13px;
+            text-decoration: none;
+            font-size: .92rem;
+            font-weight: 800;
             margin-bottom: 30px;
         }
-        
-        .logo h2 {
-            color: #667eea;
-            font-size: 24px;
-            margin-bottom: 5px;
+
+        .login-eyebrow {
+            font-size: .78rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0;
+            color: #99f6e4;
+            margin-bottom: 12px;
         }
-        
-        .logo p {
-            color: #666;
-            font-size: 14px;
+
+        .login-panel h1 {
+            font-size: clamp(2.15rem, 5vw, 4rem);
+            line-height: 1.04;
+            letter-spacing: 0;
+            margin-bottom: 16px;
         }
-        
-        .form-group {
-            margin-bottom: 20px;
+
+        .login-panel p {
+            max-width: 560px;
+            color: rgba(255, 255, 255, .82);
+            font-size: 1.04rem;
+            line-height: 1.65;
+            margin-bottom: 24px;
         }
-        
-        label {
+
+        .role-grid {
+            display: grid;
+            gap: 12px;
+            max-width: 620px;
+        }
+
+        .role-card {
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, .22);
+            background: rgba(255, 255, 255, .1);
+            padding: 15px;
+        }
+
+        .role-card strong {
             display: block;
+            margin-bottom: 4px;
+        }
+
+        .role-card span {
+            display: block;
+            color: rgba(255, 255, 255, .78);
+            font-size: .92rem;
+            line-height: 1.45;
+        }
+
+        .login-card {
+            padding: clamp(24px, 4vw, 38px);
+        }
+
+        .brand-block {
+            margin-bottom: 24px;
+        }
+
+        .brand-block h2 {
+            color: #0f766e;
+            font-size: 1.45rem;
+            line-height: 1.2;
+            margin-bottom: 6px;
+        }
+
+        .brand-block p {
+            color: #64748b;
+            line-height: 1.45;
+        }
+
+        .form-title {
+            font-size: 1.28rem;
+            margin-bottom: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 17px;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
             margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
-            font-size: 14px;
         }
-        
-        input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e1e5e9;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            font-family: inherit;
+
+        label {
+            color: #1f2937;
+            font-weight: 800;
+            font-size: .93rem;
         }
-        
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        button {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        .message {
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-        
-        .message-error {
-            background: #fee;
-            color: #c33;
-            border-left: 4px solid #c33;
-        }
-        
-        .message-success {
-            background: #efe;
-            color: #3c3;
-            border-left: 4px solid #3c3;
-        }
-        
-        .links {
-            margin-top: 20px;
-            text-align: center;
-        }
-        
-        .links a {
-            color: #667eea;
+
+        .forgot-link {
+            color: #0f766e;
+            font-size: .9rem;
+            font-weight: 800;
             text-decoration: none;
-            font-size: 14px;
         }
-        
-        .links a:hover {
+
+        .forgot-link:hover {
             text-decoration: underline;
         }
-        
-        .register-link {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #e1e5e9;
+
+        input {
+            width: 100%;
+            min-height: 48px;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            background: #ffffff;
+            color: #0f172a;
         }
-        
-        @media (max-width: 768px) {
-            .login-container {
-                padding: 30px 20px;
+
+        input:focus {
+            outline: none;
+            border-color: #0f766e;
+            box-shadow: 0 0 0 4px rgba(15, 118, 110, .13);
+        }
+
+        .submit-button {
+            width: 100%;
+            min-height: 50px;
+            padding: 12px 16px;
+            background: #0f766e;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+        }
+
+        .submit-button:hover {
+            background: #115e59;
+            box-shadow: 0 12px 24px rgba(15, 118, 110, .24);
+            transform: translateY(-1px);
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: .92rem;
+            line-height: 1.45;
+        }
+
+        .message-error {
+            background: #fef2f2;
+            color: #991b1b;
+            border-left: 4px solid #dc2626;
+        }
+
+        .message-success {
+            background: #ecfdf5;
+            color: #065f46;
+            border-left: 4px solid #0f766e;
+        }
+
+        .message-warning {
+            background: #fffbeb;
+            color: #92400e;
+            border-left: 4px solid #d97706;
+        }
+
+        .field-error {
+            display: block;
+            color: #991b1b;
+            font-size: .82rem;
+            margin-top: 6px;
+        }
+
+        .new-account {
+            margin-top: 22px;
+            padding-top: 18px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .new-account p {
+            color: #475569;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .register-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .register-card {
+            min-height: 86px;
+            border-radius: 8px;
+            padding: 13px;
+            text-decoration: none;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3px;
+        }
+
+        .register-card:hover {
+            border-color: #0f766e;
+        }
+
+        .register-card strong {
+            color: #0f172a;
+        }
+
+        .register-card span {
+            color: #64748b;
+            font-size: .84rem;
+            line-height: 1.35;
+        }
+
+        .start-link {
+            display: inline-flex;
+            margin-top: 13px;
+            color: #2563eb;
+            font-weight: 800;
+            text-decoration: none;
+            font-size: .92rem;
+        }
+
+        .start-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 900px) {
+            body {
+                padding: 14px;
             }
-            
-            input {
-                font-size: 16px; /* Prevents zoom on mobile */
+
+            .login-shell {
+                min-height: calc(100vh - 28px);
+                grid-template-columns: 1fr;
+            }
+
+            .login-card {
+                order: -1;
+            }
+
+            .login-panel {
+                min-height: auto;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .login-card,
+            .login-panel {
+                padding: 22px;
+            }
+
+            .register-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
+
 <body>
-    <div class="login-container">
-        <div class="logo">
-            <h2>AI Internship System</h2>
-            <p>Internship & Attachment Matching</p>
-        </div>
-        
-        <h3 style="text-align: center; margin-bottom: 25px; color: #333;">Welcome Back</h3>
-        
-        <!-- Display messages from Django -->
-        {% if messages %}
-            {% for message in messages %}
-                <div class="message message-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
-                    {{ message }}
+    <div class="login-shell">
+        <section class="login-panel" aria-labelledby="login-heading">
+            <a href="{% url 'home' %}" class="back-link">Back to home</a>
+
+            <div class="login-eyebrow">Secure dashboard access</div>
+
+            <h1 id="login-heading">Login to the right dashboard.</h1>
+
+            <p>
+                One sign-in page serves students, employers and admins. New users should choose the matching registration path before logging in.
+            </p>
+
+            <div class="role-grid" aria-label="Account paths">
+                <div class="role-card">
+                    <strong>Students</strong>
+                    <span>Register first, verify the account, then complete your profile and apply.</span>
                 </div>
-            {% endfor %}
-        {% endif %}
-        
-        <!-- Display form errors -->
-        {% if form.non_field_errors %}
-            <div class="message message-error">
-                {% for error in form.non_field_errors %}
-                    {{ error }}
+
+                <div class="role-card">
+                    <strong>Employers</strong>
+                    <span>Create a company account before posting opportunities or reviewing applications.</span>
+                </div>
+
+                <div class="role-card">
+                    <strong>Existing users</strong>
+                    <span>Use your username or email plus password to return to your dashboard.</span>
+                </div>
+            </div>
+        </section>
+
+        <main class="login-card" aria-label="Login form">
+            <div class="brand-block">
+                <h2>AI Internship System</h2>
+                <p>Internship &amp; Attachment Matching</p>
+            </div>
+
+            <h3 class="form-title">Welcome back</h3>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="message message-{% if message.tags == 'error' %}error{% elif message.tags == 'warning' %}warning{% else %}success{% endif %}">
+                        {{ message }}
+                    </div>
                 {% endfor %}
-            </div>
-        {% endif %}
-        
-        <form method="post" action="{% url 'login' %}" autocomplete="on">
-            {% csrf_token %}
-            
-            <div class="form-group">
-                <label for="id_username">Username or Email</label>
-                <input type="text" 
-                       name="username" 
-                       id="id_username" 
-                       class="form-control" 
-                       required 
-                       autocomplete="username"
-                       autocapitalize="none"
-                       autocorrect="off"
-                       spellcheck="false"
-                       inputmode="email"
-                       placeholder="Enter your username or email"
-                       value="{{ form.username.value|default:'' }}">
-                {% if form.username.errors %}
-                    <small style="color: #c33; font-size: 12px;">{{ form.username.errors.0 }}</small>
-                {% endif %}
-            </div>
-            
-            <div class="form-group">
-                <label for="id_password">Password</label>
-                <input type="password" 
-                       name="password" 
-                       id="id_password" 
-                       class="form-control" 
-                       required 
-                       autocomplete="current-password"
-                       autocapitalize="none"
-                       autocorrect="off"
-                       spellcheck="false"
-                       placeholder="Enter your password">
-                {% if form.password.errors %}
-                    <small style="color: #c33; font-size: 12px;">{{ form.password.errors.0 }}</small>
-                {% endif %}
-            </div>
-            
-            <button type="submit">Login</button>
-            
-            {% if next %}
-                <input type="hidden" name="next" value="{{ next }}">
             {% endif %}
-        </form>
-        
-        <div class="links">
-            <div>
-            <a href="{% url 'password_reset' %}">
-    Forgot Password?
-</a>
+
+            {% if form.non_field_errors %}
+                <div class="message message-error">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'login' %}" autocomplete="on">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="id_username">Username or email</label>
+                    <input type="text"
+                           name="username"
+                           id="id_username"
+                           required
+                           autocomplete="username"
+                           autocapitalize="none"
+                           autocorrect="off"
+                           spellcheck="false"
+                           inputmode="email"
+                           placeholder="Enter your username or email"
+                           value="{{ form.username.value|default:'' }}">
+
+                    {% if form.username.errors %}
+                        <small class="field-error">{{ form.username.errors.0 }}</small>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label for="id_password">Password</label>
+                        <a href="{% url 'password_reset' %}" class="forgot-link">Forgot password?</a>
+                    </div>
+
+                    <input type="password"
+                           name="password"
+                           id="id_password"
+                           required
+                           autocomplete="current-password"
+                           autocapitalize="none"
+                           autocorrect="off"
+                           spellcheck="false"
+                           placeholder="Enter your password">
+
+                    {% if form.password.errors %}
+                        <small class="field-error">{{ form.password.errors.0 }}</small>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="submit-button">Login</button>
+
+                {% if next %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                {% endif %}
+            </form>
+
+            <div class="new-account">
+                <p>Need an account?</p>
+
+                <div class="register-grid">
+                    <a href="{% url 'student_register' %}" class="register-card">
+                        <strong>Student register</strong>
+                        <span>Create a student placement profile.</span>
+                    </a>
+
+                    <a href="{% url 'employer_register' %}" class="register-card">
+                        <strong>Employer register</strong>
+                        <span>Create a company hiring profile.</span>
+                    </a>
+                </div>
+
+                <a href="{% url 'account_start' %}" class="start-link">Not sure? Choose account type</a>
             </div>
-            <div class="register-link">
-                <a href="{% url 'account_start' %}">Don't have an account? Register here</a>
-            </div>
-        </div>
+        </main>
     </div>
-    
-    <script>
-        // Mobile-specific enhancements
-        (function() {
-            // Detect mobile device
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|Windows Phone/i.test(navigator.userAgent);
-            
-            if (isMobile) {
-                // Remove autocomplete restrictions for mobile
-                const form = document.querySelector('form');
-                if (form) {
-                    form.setAttribute('autocomplete', 'on');
-                }
-                
-                // Add touch-friendly feedback
-                const button = document.querySelector('button');
-                if (button) {
-                    button.addEventListener('touchstart', function() {
-                        this.style.transform = 'scale(0.98)';
-                    });
-                    button.addEventListener('touchend', function() {
-                        this.style.transform = '';
-                    });
-                }
-                
-                // Prevent zoom on input focus
-                const inputs = document.querySelectorAll('input');
-                inputs.forEach(input => {
-                    input.addEventListener('focus', function() {
-                        this.style.fontSize = '16px';
-                    });
-                });
-                
-                // Store login attempt for debugging
-                console.log('Mobile device detected - applying mobile optimizations');
-            }
-            
-            // Add CSRF token debug (remove in production)
-            const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
-            if (csrfInput && csrfInput.value) {
-                console.log('CSRF token present');
-            }
-        })();
-    </script>
 </body>
 </html>
+

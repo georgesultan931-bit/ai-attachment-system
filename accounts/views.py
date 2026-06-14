@@ -1013,59 +1013,54 @@ from django.core.mail import send_mail
 
 
 def password_reset_request(request):
-    """Step 1: User requests password reset by entering email"""
+    """Request a password reset and report real email delivery failures."""
     if request.method == 'POST':
-        email = request.POST.get('email')
-        
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            # Don't reveal if email exists for security
-            messages.success(request, 'If an account exists with that email, a reset link has been sent.')
+        email = clean_login_value(request.POST.get('email'))
+
+        if not email:
+            messages.error(request, 'Please enter your email address.')
+            return render(request, 'accounts/password_reset.html', {'email_value': email})
+
+        user = User.objects.filter(email__iexact=email).first()
+
+        if not user:
+            messages.success(
+                request,
+                'If an account exists with that email, a password reset link has been sent.',
+            )
             return redirect('password_reset_done')
-        
-        # Generate token and uid
+
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
-        
-        # Build reset link
-        reset_link = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
-        
-        # Send email
-        subject = 'Password Reset Request - AI Internship'
-        message = f"""
-        Hello {user.username or user.email},
-        
-        You requested a password reset for your AI Internship account.
-        
-        Click the link below to reset your password:
-        {reset_link}
-        
-        This link expires in 24 hours.
-        
-        If you didn't request this, please ignore this email.
-        
-        Best regards,
-        AI Internship Team
-        """
-        
-        try:
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
-            )
-            messages.success(request, 'Password reset link sent to your email!')
-        except Exception as e:
-            logger.error(f"Failed to send password reset email: {str(e)}")
-            messages.error(request, 'Failed to send email. Please try again later.')
-        
-        return redirect('password_reset_done')
-    
-    return render(request, 'accounts/password_reset_form.html')
+        reset_link = build_public_url(f'/reset-password/{uid}/{token}/')
 
+        sent, delivery_message = send_system_email(
+            subject='Password Reset Request - AI Internship',
+            message=(
+                f'Hello {user.username or user.email},\n\n'
+                'You requested a password reset for your AI Internship account.\n\n'
+                f'Reset link:\n{reset_link}\n\n'
+                'This link can be used once. If you did not request this, you can ignore this email.'
+            ),
+            recipient_list=[user.email],
+            button_text='Reset Password',
+            button_url=reset_link,
+        )
+
+        if sent:
+            messages.success(
+                request,
+                'Password reset email sent. Check your inbox and spam folder.',
+            )
+        else:
+            messages.error(
+                request,
+                f'Password reset email was not sent: {delivery_message}',
+            )
+
+        return redirect('password_reset_done')
+
+    return render(request, 'accounts/password_reset.html')
 
 def password_reset_done(request):
     """Step 2: After email is sent, show confirmation page"""
@@ -1101,3 +1096,4 @@ def password_reset_confirm(request, uidb64, token):
 def password_reset_complete(request):
     """Step 4: After password reset success"""
     return render(request, 'accounts/password_reset_complete.html')
+
