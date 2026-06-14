@@ -26,9 +26,13 @@ def _is_certificate_verify_error(error):
 
 
 def _build_connection(config, allow_insecure_ssl=False):
-    """Build email connection"""
+    """Build email connection."""
     backend = None
     connection_kwargs = {}
+    use_tls = bool(config.email_use_tls)
+
+    if int(config.email_port) == 587:
+        use_tls = True
 
     if allow_insecure_ssl:
         backend = 'notifications.email_backend.LocalSmtpEmailBackend'
@@ -40,7 +44,7 @@ def _build_connection(config, allow_insecure_ssl=False):
         port=config.email_port,
         username=config.email_host_user,
         password=config.email_host_password,
-        use_tls=config.email_use_tls,
+        use_tls=use_tls,
         timeout=60,
         **connection_kwargs,
     )
@@ -135,20 +139,9 @@ def _send_email_once(config, subject, message, recipient_list, button_text=None,
 
 def get_active_email_config():
     """
-    Get active email configuration - DATABASE FIRST, then environment variables.
-    This allows admin to configure email via Django admin panel.
+    Get active email configuration.
+    Render/environment settings win over any stale database SMTP row.
     """
-
-    # FIRST: Check database for active config (configured via admin panel)
-    try:
-        config = EmailConfiguration.objects.filter(is_active=True).first()
-        if config:
-            print(f"Using email config from DATABASE: {config.email_host}")
-            return config
-    except Exception as e:
-        print(f"Database email config error (may not exist yet): {e}")
-
-    # SECOND: Fall back to environment variables/settings (for Render setup)
     email_host = _clean_setting(
         os.environ.get('EMAIL_HOST')
         or os.environ.get('SMTP_HOST')
@@ -168,17 +161,23 @@ def get_active_email_config():
     )
 
     if all([email_host, email_host_user, email_host_password]):
-        print(f"Using email config from ENVIRONMENT: {email_host}")
+        email_port = int(
+            os.environ.get('EMAIL_PORT')
+            or os.environ.get('SMTP_PORT')
+            or getattr(settings, 'EMAIL_PORT', 587)
+        )
+        email_use_tls = str(
+            os.environ.get('EMAIL_USE_TLS', getattr(settings, 'EMAIL_USE_TLS', True))
+        ).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+        if email_port == 587:
+            email_use_tls = True
+
+        print(f"Using email config from ENVIRONMENT: {email_host}:{email_port} TLS={email_use_tls}")
         return SimpleNamespace(
             email_host=email_host,
-            email_port=int(
-                os.environ.get('EMAIL_PORT')
-                or os.environ.get('SMTP_PORT')
-                or getattr(settings, 'EMAIL_PORT', 587)
-            ),
-            email_use_tls=str(
-                os.environ.get('EMAIL_USE_TLS', getattr(settings, 'EMAIL_USE_TLS', True))
-            ).lower() == 'true',
+            email_port=email_port,
+            email_use_tls=email_use_tls,
             email_host_user=email_host_user,
             email_host_password=email_host_password,
             default_from_email=_clean_setting(
@@ -192,13 +191,22 @@ def get_active_email_config():
                 or getattr(settings, 'ADMIN_NOTIFICATION_EMAIL', '')
                 or email_host_user
             ),
+            source='ENVIRONMENT',
         )
 
-    # No configuration found
+    try:
+        config = EmailConfiguration.objects.filter(is_active=True).first()
+        if config:
+            if int(config.email_port) == 587 and not config.email_use_tls:
+                config.email_use_tls = True
+            config.source = 'DATABASE'
+            print(f"Using email config from DATABASE: {config.email_host}:{config.email_port} TLS={config.email_use_tls}")
+            return config
+    except Exception as e:
+        print(f"Database email config error (may not exist yet): {e}")
+
     print("ERROR: No email configuration found in database or environment!")
     return None
-
-
 def send_system_email(subject, message, recipient_list, button_text=None, button_url=None):
     """
     Send system email with logging and retry on certificate errors.
@@ -276,4 +284,10 @@ def send_system_email(subject, message, recipient_list, button_text=None, button
             except Exception:
                 pass
 
-        return False, str(error)
+        source = getattr(config, 'source', 'UNKNOWN')
+        safe_detail = (
+            f"{error} (SMTP source={source}, host={config.email_host}, "
+            f"port={config.email_port}, tls={bool(config.email_use_tls) or int(config.email_port) == 587})"
+        )
+        return False, safe_detail
+
