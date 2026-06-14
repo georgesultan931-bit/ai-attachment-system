@@ -1077,8 +1077,14 @@ def password_reset_confirm(request, uidb64, token):
     
     if user and default_token_generator.check_token(user, token):
         if request.method == 'POST':
-            new_password = request.POST.get('new_password')
-            confirm_password = request.POST.get('confirm_password')
+            new_password = (
+                request.POST.get('new_password')
+                or request.POST.get('new_password1')
+            )
+            confirm_password = (
+                request.POST.get('confirm_password')
+                or request.POST.get('new_password2')
+            )
             
             if new_password == confirm_password and len(new_password) >= 6:
                 user.set_password(new_password)
@@ -1088,12 +1094,14 @@ def password_reset_confirm(request, uidb64, token):
             else:
                 messages.error(request, 'Passwords do not match or password is too short (min 6 characters).')
         
-        return render(request, 'accounts/password_reset_confirm.html', {'valid': True})
+        return render(request, 'accounts/password_reset_confirm.html', {'valid': True, 'validlink': True})
     else:
-        return render(request, 'accounts/password_reset_confirm.html', {'valid': False})
+        return render(request, 'accounts/password_reset_confirm.html', {'valid': False, 'validlink': False})
 
 
 def password_reset_complete(request):
     """Step 4: After password reset success"""
     return render(request, 'accounts/password_reset_complete.html')
+
+
 
