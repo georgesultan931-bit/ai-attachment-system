@@ -420,6 +420,49 @@ class RegistrationNotificationTests(TestCase):
                 message__icontains='Admin approval required'
             ).exists()
         )
+        self.assertTrue(
+            EmailLog.objects.filter(
+                recipient='new-employer@example.com',
+                subject='Employer Registration Received'
+            ).exists()
+        )
+
+    def test_employer_approval_sends_login_email(self):
+
+        admin = User.objects.create_user(
+            username='admin-approver',
+            email='admin-approver@example.com',
+            password='Testpass12345',
+            role='admin',
+            is_active=True,
+            is_approved=True,
+            is_email_verified=True
+        )
+        employer = User.objects.create_user(
+            username='approved-employer',
+            email='approved-employer@example.com',
+            password='Testpass12345',
+            role='employer',
+            is_active=False,
+            is_approved=False,
+            is_email_verified=True
+        )
+
+        self.client.force_login(admin)
+        response = self.client.get(reverse('approve_user', args=[employer.id]))
+
+        self.assertRedirects(response, reverse('dashboard'))
+
+        employer.refresh_from_db()
+        self.assertTrue(employer.is_active)
+        self.assertTrue(employer.is_approved)
+        self.assertTrue(
+            EmailLog.objects.filter(
+                recipient='approved-employer@example.com',
+                subject='Employer Account Approved'
+            ).exists()
+        )
+
     def test_registration_without_email_config_goes_to_pending_approval(self):
 
         admin = User.objects.create_user(

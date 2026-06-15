@@ -217,6 +217,34 @@ def notify_admin_new_registration(request, user, user_notified=False):
     )
 
 
+def send_employer_registration_pending_email(user):
+    return send_system_email(
+        subject="Employer Registration Received",
+        message=(
+            f"Hello {user.username},\n\n"
+            "Your employer account registration was received successfully. "
+            "It is now waiting for admin approval.\n\n"
+            "You will receive another email after admin approval. "
+            "After approval, log in and complete your company profile."
+        ),
+        recipient_list=[user.email],
+        button_text="Open Login Page",
+        button_url=build_public_url(reverse("login")),
+    )
+
+
+def send_employer_approval_email(user):
+    return send_system_email(
+        subject="Employer Account Approved",
+        message=(
+            f"Hello {user.username},\n\n"
+            "Your employer account has been approved. You can now log in and "
+            "continue to create your company profile."
+        ),
+        recipient_list=[user.email],
+        button_text="Login and Create Profile",
+        button_url=build_public_url(reverse("login")),
+    )
 def log_registration_failure(recipient, subject, message, error):
     try:
         EmailLog.objects.create(
@@ -697,15 +725,19 @@ def employer_register(request):
 
                 user.save()
 
-                admin_notice_success, admin_notice_message = notify_admin_new_registration(
+                notify_admin_new_registration(
                     request,
                     user,
                     user_notified=True,
                 )
-                request.session["registration_email_status"] = (
-                    "sent" if admin_notice_success else "failed"
+
+                employer_notice_success, employer_notice_message = send_employer_registration_pending_email(
+                    user
                 )
-                request.session["registration_email_message"] = admin_notice_message
+                request.session["registration_email_status"] = (
+                    "sent" if employer_notice_success else "failed"
+                )
+                request.session["registration_email_message"] = employer_notice_message
                 request.session["registration_review_message"] = (
                     "Employer account created successfully. Admin must approve it before login."
                 )
@@ -940,6 +972,22 @@ def approve_user(request, user_id):
     user.is_approved = True
     user.is_active = True
     user.save()
+
+    if user.role == "employer":
+        email_sent, email_message = send_employer_approval_email(user)
+
+        if email_sent:
+            messages.success(
+                request,
+                f"{user.username} approved successfully. Approval email sent.",
+            )
+        else:
+            messages.warning(
+                request,
+                f"{user.username} approved, but approval email failed: {email_message}",
+            )
+
+        return redirect("dashboard")
 
     messages.success(
         request,
