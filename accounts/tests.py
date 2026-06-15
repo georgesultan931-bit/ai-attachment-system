@@ -378,6 +378,48 @@ class RegistrationNotificationTests(TestCase):
             1
         )
 
+    def test_employer_registration_waits_for_admin_approval_without_verification_email(self):
+
+        admin = User.objects.create_user(
+            username='admin-reviewer',
+            email='admin-reviewer@example.com',
+            password='Testpass12345',
+            role='admin',
+            is_active=True,
+            is_approved=True,
+            is_email_verified=True
+        )
+
+        with patch('accounts.views.send_registration_received_notification') as send_verification:
+            response = self.client.post(
+                reverse('employer_register'),
+                {
+                    'username': 'new-employer',
+                    'email': 'new-employer@example.com',
+                    'phone_number': '0712345678',
+                    'password1': 'StrongPass12345!',
+                    'password2': 'StrongPass12345!',
+                },
+                follow=True,
+            )
+
+        self.assertRedirects(response, reverse('pending_approval'))
+        send_verification.assert_not_called()
+
+        employer = User.objects.get(username='new-employer')
+
+        self.assertEqual(employer.role, 'employer')
+        self.assertFalse(employer.is_active)
+        self.assertFalse(employer.is_approved)
+        self.assertTrue(employer.is_email_verified)
+
+        self.assertContains(response, 'Registration Under Admin Review')
+        self.assertTrue(
+            Notification.objects.filter(
+                user=admin,
+                message__icontains='Admin approval required'
+            ).exists()
+        )
     def test_registration_without_email_config_goes_to_pending_approval(self):
 
         admin = User.objects.create_user(

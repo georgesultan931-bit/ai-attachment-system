@@ -179,10 +179,15 @@ def create_admin_notification(message):
 
 
 def notify_admin_new_registration(request, user, user_notified=False):
-    role_label = getattr(user, "role", "user").title()
-    email_status = "Verification email sent." if user_notified else (
-        "Verification email delivery needs admin attention."
-    )
+    role = getattr(user, "role", "user")
+    role_label = role.title()
+
+    if role == "employer":
+        email_status = "Admin approval required before employer can log in."
+    else:
+        email_status = "Verification email sent." if user_notified else (
+            "Verification email delivery needs admin attention."
+        )
     dashboard_message = (
         f"New {role_label.lower()} registration: "
         f"{user.username} ({user.email}). {email_status}"
@@ -631,6 +636,7 @@ def student_register(request):
                     "sent" if notice_success else "failed"
                 )
                 request.session["registration_email_message"] = notice_message
+                request.session.pop("registration_review_message", None)
 
                 messages.success(
                     request,
@@ -687,22 +693,26 @@ def employer_register(request):
                 user.is_approved = False
 
                 if hasattr(user, "is_email_verified"):
-                    user.is_email_verified = False
+                    user.is_email_verified = True
 
                 user.save()
 
-                notice_success, notice_message = send_registration_verification_safely(
+                admin_notice_success, admin_notice_message = notify_admin_new_registration(
                     request,
                     user,
+                    user_notified=True,
                 )
                 request.session["registration_email_status"] = (
-                    "sent" if notice_success else "failed"
+                    "sent" if admin_notice_success else "failed"
                 )
-                request.session["registration_email_message"] = notice_message
+                request.session["registration_email_message"] = admin_notice_message
+                request.session["registration_review_message"] = (
+                    "Employer account created successfully. Admin must approve it before login."
+                )
 
                 messages.success(
                     request,
-                    "Employer account created successfully. Please verify your email.",
+                    "Employer account created successfully. Admin will review and approve it.",
                 )
 
                 return redirect("pending_approval")
@@ -764,6 +774,31 @@ def verify_registration_email(request, token):
     if hasattr(user, "is_email_verified"):
         user.is_email_verified = True
 
+    if user.role == "employer":
+        user.is_approved = False
+        user.is_active = False
+        user.save()
+
+        request.session["registration_review_message"] = (
+            "Employer email verified. Admin must approve the account before login."
+        )
+        request.session["registration_email_status"] = "sent"
+        request.session["registration_email_message"] = "Employer is waiting for admin approval."
+
+        try:
+            notify_admin_new_registration(request, user, user_notified=True)
+        except Exception as error:
+            logger.exception("Admin notification failed after employer verification.")
+            log_registration_failure(
+                recipient=user.email,
+                subject="Admin Notification Failed",
+                message="Employer verified email but admin notification failed.",
+                error=error,
+            )
+
+        messages.info(request, "Email verified. Admin must approve your employer account before login.")
+        return redirect("pending_approval")
+
     user.is_approved = True
     user.is_active = True
     user.save()
@@ -784,11 +819,6 @@ def verify_registration_email(request, token):
             return redirect("student_dashboard")
         return redirect("create_student_profile")
 
-    if user.role == "employer":
-        if has_employer_profile(user):
-            return redirect("employer_profile")
-        return redirect("create_employer_profile")
-
     return redirect("dashboard")
 
 
@@ -800,6 +830,7 @@ def pending_approval(request):
             "email_delivery_ready": get_active_email_config() is not None,
             "registration_email_status": request.session.get("registration_email_status"),
             "registration_email_message": request.session.get("registration_email_message"),
+            "registration_review_message": request.session.get("registration_review_message"),
             "mobile_device": is_mobile_device(request),
         },
     )

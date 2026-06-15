@@ -4,31 +4,55 @@
 <div class="container py-5" style="max-width: 620px;">
     <div class="card border-0 shadow-lg rounded-4">
         <div class="card-body p-4 p-md-5 text-center">
-            <h2 class="mb-3">Check Your Email</h2>
+            {% if registration_review_message %}
+                <h2 class="mb-3">Registration Under Admin Review</h2>
 
-            <p class="text-muted mb-4">
-                Your account has been created. Please open your email inbox and click the verification link to activate your account.
-            </p>
+                <p class="text-muted mb-4">
+                    {{ registration_review_message }}
+                </p>
 
-            {% if registration_email_status == "failed" %}
-                <div class="alert alert-warning text-start">
-                    <strong>Email Delivery Failed</strong><br>
-                    Your account was created, but the verification email could not be delivered.
-                    Admin should open Email logs and check the latest error message.
-                    {% if registration_email_message %}
-                        <hr>
-                        <small>{{ registration_email_message }}</small>
-                    {% endif %}
-                </div>
-            {% elif not email_delivery_ready %}
-                <div class="alert alert-warning text-start">
-                    Email delivery configuration is not ready. If you are testing locally, check your PowerShell terminal for the verification link.
-                </div>
+                {% if registration_email_status == "failed" %}
+                    <div class="alert alert-warning text-start">
+                        <strong>Admin Notification Email Failed</strong><br>
+                        Your employer account was created and is visible on the admin dashboard, but the admin email notification could not be delivered.
+                        {% if registration_email_message %}
+                            <hr>
+                            <small>{{ registration_email_message }}</small>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info text-start">
+                        <strong>Waiting for Approval</strong><br>
+                        Admin has been notified on the dashboard and by email. You can log in after approval.
+                    </div>
+                {% endif %}
             {% else %}
-                <div class="alert alert-warning text-start">
-                    <strong>Check Your Email</strong><br>
-                    We sent a verification link to your email address. Open the link to verify your account and continue to your profile.
-                </div>
+                <h2 class="mb-3">Check Your Email</h2>
+
+                <p class="text-muted mb-4">
+                    Your account has been created. Please open your email inbox and click the verification link to activate your account.
+                </p>
+
+                {% if registration_email_status == "failed" %}
+                    <div class="alert alert-warning text-start">
+                        <strong>Email Delivery Failed</strong><br>
+                        Your account was created, but the verification email could not be delivered.
+                        Admin should open Email logs and check the latest error message.
+                        {% if registration_email_message %}
+                            <hr>
+                            <small>{{ registration_email_message }}</small>
+                        {% endif %}
+                    </div>
+                {% elif not email_delivery_ready %}
+                    <div class="alert alert-warning text-start">
+                        Email delivery configuration is not ready. If you are testing locally, check your PowerShell terminal for the verification link.
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning text-start">
+                        <strong>Check Your Email</strong><br>
+                        We sent a verification link to your email address. Open the link to verify your account and continue to your profile.
+                    </div>
+                {% endif %}
             {% endif %}
 
             <a href="{% url 'login' %}" class="btn btn-primary btn-lg w-100">
