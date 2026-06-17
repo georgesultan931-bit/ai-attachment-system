@@ -37,6 +37,7 @@ PUBLIC_SITE_URL
 DATABASE_URL
 DEFAULT_FROM_EMAIL
 EMAIL_SENDER_NAME
+EMAIL_ALLOW_CUSTOM_FROM
 EMAIL_ALLOW_INSECURE_SMTP_SSL
 EMAIL_HOST
 EMAIL_PORT
@@ -51,22 +52,23 @@ Email and WhatsApp provider credentials should be configured securely, not commi
 
 ## Email Inbox Delivery
 
-To make password reset, verification, and chat alerts reach user inboxes more reliably, use a dedicated sender such as `noreply@your-domain.com`, set `EMAIL_SENDER_NAME`, and authenticate the domain with SPF, DKIM, and DMARC at your DNS provider. Code can improve headers and content, but inbox placement is decided by mailbox providers such as Gmail.
+To make password reset, verification, chat alerts, and registration emails reach user inboxes more reliably, keep the visible sender aligned with the SMTP login address. When using Gmail SMTP, leave `EMAIL_ALLOW_CUSTOM_FROM=False`; the app will send from `EMAIL_HOST_USER` even if `DEFAULT_FROM_EMAIL` is accidentally different.
 
-For Render, set these email variables:
+For Render with Gmail SMTP, set these email variables:
 
 ```text
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
-EMAIL_HOST_USER=your-mailbox@your-domain.com
-EMAIL_HOST_PASSWORD=your-app-password
-DEFAULT_FROM_EMAIL=noreply@your-domain.com
+EMAIL_HOST_USER=georgesultan931@gmail.com
+EMAIL_HOST_PASSWORD=your-gmail-app-password
+DEFAULT_FROM_EMAIL=georgesultan931@gmail.com
 EMAIL_SENDER_NAME=AI Internship & Attachment System
-ADMIN_NOTIFICATION_EMAIL=admin@your-domain.com
+EMAIL_ALLOW_CUSTOM_FROM=False
+ADMIN_NOTIFICATION_EMAIL=georgesultan931@gmail.com
 ```
 
-Before presenting, send a password reset email to Gmail and use Show original to confirm SPF, DKIM, and DMARC show PASS.
+Before presenting, send a password reset email to Gmail and use Show original to confirm SPF or DKIM passes. If a test message lands in Spam after changing settings, mark the first valid message as Not spam.
 
 ## GitHub Push
 

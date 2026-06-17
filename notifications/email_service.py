@@ -1,7 +1,7 @@
 # notifications/email_service.py
 
 import os
-from email.utils import formataddr
+from email.utils import formataddr, parseaddr
 from types import SimpleNamespace
 
 from django.conf import settings
@@ -42,17 +42,41 @@ def _site_url():
     return _clean_setting(getattr(settings, 'PUBLIC_SITE_URL', '')).rstrip('/')
 
 
+def _extract_email(value):
+    cleaned_value = _clean_setting(value)
+    return parseaddr(cleaned_value)[1] or cleaned_value
+
+
+def _uses_google_smtp(config):
+    host = _clean_setting(getattr(config, 'email_host', '')).lower()
+    return 'gmail.com' in host or 'googlemail.com' in host
+
+
+def _allow_custom_from():
+    return str(
+        os.environ.get(
+            'EMAIL_ALLOW_CUSTOM_FROM',
+            getattr(settings, 'EMAIL_ALLOW_CUSTOM_FROM', False)
+        )
+    ).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
 def _sender_address(config):
-    return (
-        _clean_setting(getattr(config, 'default_from_email', ''))
-        or _clean_setting(getattr(config, 'email_host_user', ''))
+    configured_sender = _extract_email(
+        getattr(config, 'default_from_email', '')
     )
+    smtp_user = _extract_email(
+        getattr(config, 'email_host_user', '')
+    )
+
+    if _uses_google_smtp(config) and smtp_user and not _allow_custom_from():
+        return smtp_user
+
+    return configured_sender or smtp_user
 
 
 def _display_from_email(config):
     sender = _sender_address(config)
-    if '<' in sender and '>' in sender:
-        return sender
     return formataddr((_sender_name(), sender))
 
 

@@ -163,6 +163,15 @@ DEFAULT_FROM_EMAIL = os.environ.get(
     "DEFAULT_FROM_EMAIL"
 ) or os.environ.get("EMAIL_FROM") or EMAIL_HOST_USER
 
+EMAIL_SENDER_NAME = os.environ.get(
+    "EMAIL_SENDER_NAME",
+    "AI Internship & Attachment System"
+)
+EMAIL_ALLOW_CUSTOM_FROM = os.environ.get(
+    "EMAIL_ALLOW_CUSTOM_FROM",
+    "False"
+).lower() == "true"
+
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 ADMIN_NOTIFICATION_EMAIL = os.environ.get(
@@ -199,4 +208,3 @@ else:
 
 # Frontend URL for password reset links
 FRONTEND_URL = os.environ.get('FRONTEND_URL', PUBLIC_SITE_URL)
-
