@@ -15,6 +15,8 @@ class InternshipOpportunityForm(forms.ModelForm):
         model = InternshipOpportunity
 
         fields = [
+            'company_name',
+            'company_email',
             'title',
             'internship_type',
             'description',
@@ -26,6 +28,20 @@ class InternshipOpportunityForm(forms.ModelForm):
         ]
 
         widgets = {
+
+            'company_name': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Company name for this opportunity'
+                }
+            ),
+
+            'company_email': forms.EmailInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Company email for this opportunity'
+                }
+            ),
 
             'title': forms.TextInput(
                 attrs={'class': 'form-control'}
@@ -77,6 +93,11 @@ class InternshipOpportunityForm(forms.ModelForm):
             ),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['company_name'].required = True
+        self.fields['company_email'].required = True
+
     def clean_deadline(self):
         deadline = self.cleaned_data.get('deadline')
 
@@ -86,6 +107,7 @@ class InternshipOpportunityForm(forms.ModelForm):
             )
 
         return deadline
+
 
 class InterviewScheduleForm(forms.ModelForm):
 
@@ -131,6 +153,7 @@ class InterviewScheduleForm(forms.ModelForm):
                 }
             ),
         }
+
 
 class ApplicationMessageForm(forms.ModelForm):
 

@@ -306,7 +306,7 @@ body.dark-mode .simple-row {
                         <div class="d-flex justify-content-between gap-3">
                             <div>
                                 <strong>{{ item.opportunity.title }}</strong>
-                                <div class="text-muted small">{{ item.opportunity.employer.company_name }}</div>
+                                <div class="text-muted small">{{ item.opportunity.display_company_name }}</div>
                             </div>
                             <span class="badge text-bg-success align-self-start">{{ item.score }}%</span>
                         </div>
@@ -470,7 +470,7 @@ body.dark-mode .simple-row {
                         <div class="d-flex justify-content-between gap-3">
                             <div>
                                 <strong>{{ application.opportunity.title }}</strong>
-                                <div class="text-muted small">{{ application.opportunity.employer.company_name }}</div>
+                                <div class="text-muted small">{{ application.opportunity.display_company_name }}</div>
                             </div>
                             <span class="badge text-bg-secondary align-self-start">
                                 {{ application.get_status_display }}

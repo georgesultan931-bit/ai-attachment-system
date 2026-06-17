@@ -138,7 +138,7 @@ def opportunity_list(request):
             if search_term in result['opportunity'].title.lower()
             or search_term in result['opportunity'].location.lower()
             or search_term in result['opportunity'].required_skills.lower()
-            or search_term in result['opportunity'].employer.company_name.lower()
+            or search_term in result['opportunity'].display_company_name.lower()
         ]
 
     if location_filter:
@@ -746,7 +746,7 @@ def update_application_status(request, application_id, status):
     full_message = (
         f'{user_message}\n\n'
         f'Opportunity: {application.opportunity.title}\n'
-        f'Company: {application.opportunity.employer.company_name}'
+        f'Company: {application.opportunity.display_company_name}'
     )
 
     Notification.objects.create(
@@ -813,7 +813,7 @@ def schedule_interview(request, application_id):
             interview_message = (
                 f'You have been invited for an interview.\n\n'
                 f'Opportunity: {interview.opportunity.title}\n'
-                f'Company: {interview.opportunity.employer.company_name}\n'
+                f'Company: {interview.opportunity.display_company_name}\n'
                 f'Date: {interview.interview_date}\n'
                 f'Time: {interview.interview_time}\n'
                 f'Location / Link: {interview.interview_location}\n\n'
@@ -907,7 +907,12 @@ def create_opportunity(request):
 
     else:
 
-        form = InternshipOpportunityForm()
+        form = InternshipOpportunityForm(
+            initial={
+                'company_name': employer.company_name,
+                'company_email': employer.company_email,
+            }
+        )
 
     return render(
         request,
@@ -1320,7 +1325,7 @@ def application_messages(request, application_id):
                 sender_label = application.student.full_name or request.user.username
             else:
                 recipient = application.student.user
-                sender_label = application.opportunity.employer.company_name
+                sender_label = application.opportunity.display_company_name
 
             notification_message = (
                 f'New message from {sender_label}.\n\n'

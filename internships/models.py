@@ -25,6 +25,15 @@ class InternshipOpportunity(models.Model):
         related_name='opportunities'
     )
 
+    company_name = models.CharField(
+        max_length=255,
+        blank=True
+    )
+
+    company_email = models.EmailField(
+        blank=True
+    )
+
     title = models.CharField(
         max_length=255
     )
@@ -56,11 +65,20 @@ class InternshipOpportunity(models.Model):
         auto_now_add=True
     )
 
+    @property
+    def display_company_name(self):
+        return self.company_name or self.employer.company_name
+
+    @property
+    def display_company_email(self):
+        return self.company_email or self.employer.company_email
+
     def is_expired(self):
         return self.deadline < timezone.localdate()
 
     def is_open_for_applications(self):
         return self.status == 'open' and not self.is_expired()
+
     def __str__(self):
         return self.title
 
@@ -133,6 +151,8 @@ class Application(models.Model):
 
     def __str__(self):
         return f"{self.student.user.username} - {self.opportunity.title}"
+
+
 class ApplicationMessage(models.Model):
 
     application = models.ForeignKey(
