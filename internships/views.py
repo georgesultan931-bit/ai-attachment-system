@@ -913,7 +913,8 @@ def create_opportunity(request):
         request,
         'internships/create_opportunity.html',
         {
-            'form': form
+            'form': form,
+            'employer': employer
         }
     )
 
