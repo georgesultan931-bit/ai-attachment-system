@@ -889,7 +889,8 @@ def create_opportunity(request):
     if request.method == 'POST':
 
         form = InternshipOpportunityForm(
-            request.POST
+            request.POST,
+            request.FILES
         )
 
         if form.is_valid():
@@ -983,6 +984,7 @@ def edit_opportunity(request, opportunity_id):
 
         form = InternshipOpportunityForm(
             request.POST,
+            request.FILES,
             instance=opportunity
         )
 

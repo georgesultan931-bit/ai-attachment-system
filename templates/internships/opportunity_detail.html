@@ -10,6 +10,31 @@
 
     <div class="card-body">
 
+        <div class="d-flex align-items-center gap-3 mb-4">
+
+            {% if opportunity.display_company_image %}
+
+                <img src="{{ opportunity.display_company_image.url }}"
+                     alt="{{ opportunity.display_company_name }}"
+                     class="rounded border"
+                     style="width:80px;height:80px;object-fit:cover;">
+
+            {% else %}
+
+                <div class="rounded border bg-light d-flex align-items-center justify-content-center"
+                     style="width:80px;height:80px;">
+                    <i class="bi bi-building fs-2 text-muted"></i>
+                </div>
+
+            {% endif %}
+
+            <div>
+                <h5 class="fw-bold mb-1">{{ opportunity.display_company_name }}</h5>
+                <div class="text-muted">{{ opportunity.display_company_email }}</div>
+            </div>
+
+        </div>
+
         <div class="mb-4">
 
             <div class="d-flex justify-content-between mb-2">

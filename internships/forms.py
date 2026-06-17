@@ -17,6 +17,7 @@ class InternshipOpportunityForm(forms.ModelForm):
         fields = [
             'company_name',
             'company_email',
+            'company_image',
             'title',
             'internship_type',
             'description',
@@ -40,6 +41,13 @@ class InternshipOpportunityForm(forms.ModelForm):
                 attrs={
                     'class': 'form-control',
                     'placeholder': 'Company email for this opportunity'
+                }
+            ),
+
+            'company_image': forms.ClearableFileInput(
+                attrs={
+                    'class': 'form-control',
+                    'accept': 'image/*'
                 }
             ),
 
@@ -84,6 +92,10 @@ class InternshipOpportunityForm(forms.ModelForm):
             'status': forms.Select(
                 attrs={'class': 'form-control'}
             ),
+        }
+
+        labels = {
+            'company_image': 'Company image for this opportunity',
         }
 
         help_texts = {

@@ -107,9 +107,10 @@
 
             <div class="d-flex align-items-center gap-3 mb-4">
 
-                {% if result.opportunity.employer.logo %}
+                {% if result.opportunity.display_company_image %}
 
-                    <img src="{{ result.opportunity.employer.logo.url }}"
+                    <img src="{{ result.opportunity.display_company_image.url }}"
+                         alt="{{ result.opportunity.display_company_name }}"
                          class="company-logo">
 
                 {% else %}

@@ -8,11 +8,12 @@
 
     <div class="card-body">
 
-        <table class="table table-bordered table-hover">
+        <table class="table table-bordered table-hover align-middle">
 
             <thead class="table-dark">
 
                 <tr>
+                    <th>Company</th>
                     <th>Title</th>
                     <th>Location</th>
                     <th>Status</th>
@@ -27,6 +28,23 @@
             {% for opportunity in opportunities %}
 
                 <tr>
+
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            {% if opportunity.display_company_image %}
+                                <img src="{{ opportunity.display_company_image.url }}"
+                                     alt="{{ opportunity.display_company_name }}"
+                                     class="rounded border"
+                                     style="width:44px;height:44px;object-fit:cover;">
+                            {% else %}
+                                <span class="rounded border bg-light d-inline-flex align-items-center justify-content-center"
+                                      style="width:44px;height:44px;">
+                                    <i class="bi bi-building text-muted"></i>
+                                </span>
+                            {% endif %}
+                            <span>{{ opportunity.display_company_name }}</span>
+                        </div>
+                    </td>
 
                     <td>
                         {{ opportunity.title }}
@@ -55,36 +73,36 @@
                     </td>
 
                     <td>
-    {{ opportunity.deadline }}
-</td>
+                        {{ opportunity.deadline }}
+                    </td>
 
-<td>
+                    <td>
+                        <a class="btn btn-sm btn-primary"
+                           href="{% url 'edit_opportunity' opportunity.id %}">
+                            Edit
+                        </a>
 
-    <a class="btn btn-sm btn-primary"
-       href="{% url 'edit_opportunity' opportunity.id %}">
-        Edit
-    </a>
-<a class="btn btn-sm btn-danger"
-   href="{% url 'delete_opportunity' opportunity.id %}">
-    Delete
-</a>
-<a class="btn btn-sm btn-warning"
-   href="{% url 'toggle_opportunity_status' opportunity.id %}">
-    {% if opportunity.status == 'open' %}
-        Close
-    {% else %}
-        Reopen
-    {% endif %}
-</a>
+                        <a class="btn btn-sm btn-danger"
+                           href="{% url 'delete_opportunity' opportunity.id %}">
+                            Delete
+                        </a>
 
-</td>
+                        <a class="btn btn-sm btn-warning"
+                           href="{% url 'toggle_opportunity_status' opportunity.id %}">
+                            {% if opportunity.status == 'open' %}
+                                Close
+                            {% else %}
+                                Reopen
+                            {% endif %}
+                        </a>
+                    </td>
 
                 </tr>
 
             {% empty %}
 
                 <tr>
-                    <td colspan="4">
+                    <td colspan="6">
                         No opportunities posted yet.
                     </td>
                 </tr>

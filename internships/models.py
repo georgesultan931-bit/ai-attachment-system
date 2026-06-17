@@ -34,6 +34,12 @@ class InternshipOpportunity(models.Model):
         blank=True
     )
 
+    company_image = models.ImageField(
+        upload_to='opportunity_company_images/',
+        blank=True,
+        null=True
+    )
+
     title = models.CharField(
         max_length=255
     )
@@ -72,6 +78,10 @@ class InternshipOpportunity(models.Model):
     @property
     def display_company_email(self):
         return self.company_email or self.employer.company_email
+
+    @property
+    def display_company_image(self):
+        return self.company_image or self.employer.logo
 
     def is_expired(self):
         return self.deadline < timezone.localdate()
