@@ -47,6 +47,12 @@ urlpatterns = [
         name='decline_interview'
     ),
 
+
+    path(
+        'employer-messages/',
+        views.employer_conversations,
+        name='employer_conversations'
+    ),
     path(
         'employer-applications/',
         views.employer_applications,
@@ -65,6 +71,12 @@ urlpatterns = [
         name='application_detail'
     ),
 
+
+    path(
+        'application/<int:application_id>/messages/',
+        views.application_messages,
+        name='application_messages'
+    ),
     path(
         'application/<int:application_id>/schedule-interview/',
         views.schedule_interview,

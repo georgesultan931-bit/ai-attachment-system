@@ -1,8 +1,10 @@
 from django import forms
+from django.utils import timezone
 
 from .models import (
     InternshipOpportunity,
-    Application
+    Application,
+    ApplicationMessage
 )
 
 
@@ -75,6 +77,15 @@ class InternshipOpportunityForm(forms.ModelForm):
             ),
         }
 
+    def clean_deadline(self):
+        deadline = self.cleaned_data.get('deadline')
+
+        if deadline and deadline < timezone.localdate():
+            raise forms.ValidationError(
+                'Deadline cannot be in the past.'
+            )
+
+        return deadline
 
 class InterviewScheduleForm(forms.ModelForm):
 
@@ -117,6 +128,26 @@ class InterviewScheduleForm(forms.ModelForm):
                     'class': 'form-control',
                     'rows': 4,
                     'placeholder': 'Additional instructions for candidate'
+                }
+            ),
+        }
+
+class ApplicationMessageForm(forms.ModelForm):
+
+    class Meta:
+
+        model = ApplicationMessage
+
+        fields = [
+            'message',
+        ]
+
+        widgets = {
+            'message': forms.Textarea(
+                attrs={
+                    'class': 'form-control',
+                    'rows': 4,
+                    'placeholder': 'Write a clear message about this application...'
                 }
             ),
         }

@@ -121,6 +121,28 @@ class StudentProfile(models.Model):
 
         super().save(*args, **kwargs)
 
+    def get_profile_completion_items(self):
+        return [
+            ('Full name', self.full_name or (self.first_name and self.surname)),
+            ('Course', self.course),
+            ('Institution', self.institution),
+            ('Skills', self.skills or self.extracted_skills),
+            ('CV', self.cv),
+            ('Preferred location', self.location),
+            ('Phone number', self.phone_number or self.user.phone_number),
+            ('Short bio', self.bio),
+        ]
+
+    def get_profile_completion(self):
+        completion_items = self.get_profile_completion_items()
+        completed_count = sum(bool(value) for label, value in completion_items)
+        return int((completed_count / len(completion_items)) * 100)
+
+    def get_missing_profile_items(self):
+        return [label for label, value in self.get_profile_completion_items() if not value]
+
+    def can_apply(self):
+        return self.get_profile_completion() >= 70
     def __str__(self):
         return self.full_name or self.user.username
 

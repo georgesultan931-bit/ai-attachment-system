@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from employers.models import EmployerProfile
 from students.models import StudentProfile
@@ -54,6 +56,11 @@ class InternshipOpportunity(models.Model):
         auto_now_add=True
     )
 
+    def is_expired(self):
+        return self.deadline < timezone.localdate()
+
+    def is_open_for_applications(self):
+        return self.status == 'open' and not self.is_expired()
     def __str__(self):
         return self.title
 
@@ -126,3 +133,32 @@ class Application(models.Model):
 
     def __str__(self):
         return f"{self.student.user.username} - {self.opportunity.title}"
+class ApplicationMessage(models.Model):
+
+    application = models.ForeignKey(
+        Application,
+        on_delete=models.CASCADE,
+        related_name='messages'
+    )
+
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='sent_application_messages'
+    )
+
+    message = models.TextField()
+
+    is_read = models.BooleanField(
+        default=False
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'{self.sender.username} - {self.application.opportunity.title}'

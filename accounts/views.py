@@ -392,6 +392,22 @@ def user_login(request):
                     },
                 )
 
+            if getattr(user, "role", "") == "employer" and not getattr(user, "is_approved", False):
+                error_message = "Your employer account is waiting for admin approval."
+
+                if is_json_request:
+                    return JsonResponse({"error": error_message}, status=403)
+
+                messages.error(request, error_message)
+
+                return render(
+                    request,
+                    "accounts/login.html",
+                    {
+                        "form": AuthenticationForm(),
+                        "mobile_device": mobile_device,
+                    },
+                )
             login(
                 request,
                 user,
@@ -1183,7 +1199,7 @@ def password_reset_confirm(request, uidb64, token):
         user = User.objects.get(pk=uid)
     except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
-    
+
     if user and default_token_generator.check_token(user, token):
         if request.method == 'POST':
             new_password = (
@@ -1194,7 +1210,7 @@ def password_reset_confirm(request, uidb64, token):
                 request.POST.get('confirm_password')
                 or request.POST.get('new_password2')
             )
-            
+
             if new_password == confirm_password and len(new_password) >= 6:
                 user.set_password(new_password)
                 user.save()
@@ -1202,7 +1218,7 @@ def password_reset_confirm(request, uidb64, token):
                 return redirect('login')
             else:
                 messages.error(request, 'Passwords do not match or password is too short (min 6 characters).')
-        
+
         return render(request, 'accounts/password_reset_confirm.html', {'valid': True, 'validlink': True})
     else:
         return render(request, 'accounts/password_reset_confirm.html', {'valid': False, 'validlink': False})

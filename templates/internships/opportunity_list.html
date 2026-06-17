@@ -32,19 +32,64 @@
     Recommended Opportunities
 </h1>
 
+{% if not can_apply %}
+    <div class="alert alert-warning border-0 shadow-sm">
+        <strong>Profile completion required:</strong>
+        Your profile is {{ profile_completion }}% complete. Reach {{ profile_completion_minimum }}% before applying.
+        {% if missing_profile_items %}
+            <div class="mt-2">
+                Missing:
+                {% for item in missing_profile_items %}
+                    <span class="badge text-bg-light border me-1">{{ item }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endif %}
+
 <form method="get" class="mb-4">
 
-    <div class="input-group">
+    <div class="row g-2">
 
-        <input type="text"
-               name="q"
-               class="form-control"
-               placeholder="Search jobs, companies, locations..."
-               value="{{ query }}">
+        <div class="col-lg-4">
+            <input type="text"
+                   name="q"
+                   class="form-control"
+                   placeholder="Search title, company, skill..."
+                   value="{{ query }}">
+        </div>
 
-        <button class="btn btn-dark">
-            Search
-        </button>
+        <div class="col-lg-3">
+            <input type="text"
+                   name="location"
+                   class="form-control"
+                   placeholder="Location"
+                   value="{{ location_filter }}">
+        </div>
+
+        <div class="col-lg-2">
+            <select name="type" class="form-control">
+                <option value="">All types</option>
+                {% for value, label in internship_types %}
+                    <option value="{{ value }}" {% if type_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-lg-2">
+            <select name="min_score" class="form-control">
+                <option value="">Any score</option>
+                <option value="90" {% if min_score_filter == '90' %}selected{% endif %}>90%+</option>
+                <option value="70" {% if min_score_filter == '70' %}selected{% endif %}>70%+</option>
+                <option value="50" {% if min_score_filter == '50' %}selected{% endif %}>50%+</option>
+            </select>
+        </div>
+
+        <div class="col-lg-1 d-grid">
+            <button class="btn btn-dark">
+                Search
+            </button>
+        </div>
 
     </div>
 
@@ -96,7 +141,7 @@
                     <strong>AI Match Score</strong>
 
                     <strong>
-                        {{ result.score }}%
+                        {{ result.score }}% - {{ result.recommendation_label }}
                     </strong>
 
                 </div>
@@ -215,6 +260,12 @@
                         Already Applied
                     </button>
 
+                {% elif not result.can_apply %}
+
+                    <button class="btn btn-warning" disabled>
+                        Complete Profile First
+                    </button>
+
                 {% else %}
 
                     <a href="{% url 'apply_opportunity' result.opportunity.id %}"
@@ -223,7 +274,6 @@
                     </a>
 
                 {% endif %}
-
             </div>
 
         </div>

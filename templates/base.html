@@ -723,6 +723,12 @@
                     Applications
                 </a>
 
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'employer_conversations' or request.resolver_match.url_name == 'application_messages' %}active{% endif %}"
+                   href="{% url 'employer_conversations' %}">
+                    <i class="bi bi-chat-dots-fill"></i>
+                    Chat Box
+                </a>
+
             {% endif %}
 
             {% if user.role == 'admin' %}

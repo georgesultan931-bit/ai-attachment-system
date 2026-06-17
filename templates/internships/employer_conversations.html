@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+.conversation-hero {
+    border-radius: 8px;
+    background: #102027;
+    color: #ffffff;
+    padding: 24px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.conversation-hero p {
+    color: #cbd5e1;
+}
+
+.conversation-card {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, .06);
+}
+
+.conversation-card .card-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.conversation-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #0f766e;
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    flex: 0 0 auto;
+}
+
+.message-preview {
+    color: #64748b;
+    min-height: 64px;
+    line-height: 1.55;
+}
+
+.chat-card-footer {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+body.dark-mode .conversation-card {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+@media (max-width: 768px) {
+    .conversation-hero {
+        padding: 18px;
+    }
+}
+</style>
+
+<section class="conversation-hero">
+    <div>
+        <h1 class="fw-bold mb-1"><i class="bi bi-chat-dots-fill me-2"></i>Employer Chat Box</h1>
+        <p class="mb-0">Read, type, and manage conversations with students who applied to your opportunities.</p>
+    </div>
+
+    <a href="{% url 'employer_applications' %}" class="btn btn-light">
+        <i class="bi bi-people"></i>
+        Candidate Ranking Board
+    </a>
+</section>
+
+<div class="row g-4">
+    {% for item in conversations %}
+        <div class="col-xl-6">
+            <div class="card conversation-card h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                        <div class="d-flex align-items-start gap-3">
+                            <span class="conversation-avatar">
+                                {{ item.application.student.full_name|default:item.application.student.user.username|first|upper }}
+                            </span>
+                            <div>
+                                <h4 class="fw-bold mb-1">
+                                    {{ item.application.student.full_name|default:item.application.student.user.username }}
+                                </h4>
+                                <div class="text-muted small">
+                                    {{ item.application.opportunity.title }}
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if item.unread_count > 0 %}
+                            <span class="badge text-bg-danger">{{ item.unread_count }} new</span>
+                        {% else %}
+                            <span class="badge text-bg-light border">No new</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">Application Status</small>
+                            <strong>{{ item.application.get_status_display }}</strong>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">Applied</small>
+                            <strong>{{ item.application.applied_at|date:'M d, Y' }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="message-preview mb-4">
+                        {% if item.last_message %}
+                            <small class="text-muted d-block">
+                                Last message from {{ item.last_message.sender.username }} - {{ item.last_message.created_at }}
+                            </small>
+                            {{ item.last_message.message|truncatewords:24 }}
+                        {% else %}
+                            No messages yet. Open the chat box and start the conversation with this applicant.
+                        {% endif %}
+                    </div>
+
+                    <div class="chat-card-footer">
+                        <a href="{% url 'application_messages' item.application.id %}" class="btn btn-dark">
+                            <i class="bi bi-chat-dots-fill"></i>
+                            Open Chat Box
+                        </a>
+                        <a href="{% url 'application_detail' item.application.id %}" class="btn btn-outline-dark">
+                            View Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No applicant conversations yet. Once students apply to your opportunities, their chat boxes will appear here.
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

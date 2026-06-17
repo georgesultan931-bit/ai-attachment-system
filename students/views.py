@@ -606,28 +606,8 @@ def student_dashboard(request):
         status='rejected'
     ).count()
 
-    fields = [
-        profile.full_name,
-        profile.first_name,
-        profile.surname,
-        profile.id_number,
-        profile.course,
-        profile.institution,
-        profile.skills,
-        profile.bio,
-        profile.phone_number,
-        profile.location,
-        profile.cv,
-    ]
-
-    completed = sum(
-        bool(field)
-        for field in fields
-    )
-
-    profile_completion = int(
-        (completed / len(fields)) * 100
-    )
+    profile_completion = profile.get_profile_completion()
+    missing_profile_items = profile.get_missing_profile_items()
 
     opportunities = InternshipOpportunity.objects.filter(
         status='open'
@@ -684,6 +664,7 @@ def student_dashboard(request):
             'rejected_count': rejected_count,
 
             'profile_completion': profile_completion,
+            'missing_profile_items': missing_profile_items,
 
             'recommended_opportunities': recommended_opportunities[:5],
             'upcoming_interviews': upcoming_interviews,

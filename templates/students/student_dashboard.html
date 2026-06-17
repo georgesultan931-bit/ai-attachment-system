@@ -179,7 +179,18 @@ body.dark-mode .simple-row {
                 <i class="bi bi-person-check-fill"></i>
             </div>
             <h3 class="fw-bold mb-1">{{ profile_completion }}%</h3>
-            <p class="text-muted mb-0">Profile complete</p>
+            <p class="text-muted mb-2">Profile complete</p>
+            {% if missing_profile_items %}
+                <small class="text-muted d-block mb-2">Missing:</small>
+                <div class="d-flex flex-wrap gap-1">
+                    {% for item in missing_profile_items %}
+                        <span class="badge text-bg-light border">{{ item }}</span>
+                    {% endfor %}
+                </div>
+                {% if profile_completion < 70 %}
+                    <small class="text-danger d-block mt-2">Reach 70% to apply.</small>
+                {% endif %}
+            {% endif %}
         </div>
     </div>
 

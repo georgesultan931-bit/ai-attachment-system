@@ -2,14 +2,16 @@ from datetime import datetime
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 
 from reportlab.pdfgen import canvas
 
 from employers.models import EmployerProfile
-from matching.views import calculate_match_score, get_matched_opportunities
+from matching.views import calculate_match_score, get_matched_opportunities, get_recommendation_label
 from notifications.models import Notification
 from notifications.email_service import send_system_email
 
@@ -20,10 +22,78 @@ from students.models import (
     Referee
 )
 
-from .forms import InternshipOpportunityForm, InterviewScheduleForm
-from .models import Application, InternshipOpportunity
+from .forms import InternshipOpportunityForm, InterviewScheduleForm, ApplicationMessageForm
+from .models import Application, ApplicationMessage, InternshipOpportunity
 
 
+
+PROFILE_COMPLETION_MINIMUM = 70
+
+
+def expire_past_deadline_opportunities():
+    return InternshipOpportunity.objects.filter(
+        status='open',
+        deadline__lt=timezone.localdate()
+    ).update(
+        status='closed'
+    )
+
+
+def get_student_apply_state(student):
+    profile_completion = student.get_profile_completion()
+    missing_profile_items = student.get_missing_profile_items()
+
+    return {
+        'profile_completion': profile_completion,
+        'missing_profile_items': missing_profile_items,
+        'can_apply': profile_completion >= PROFILE_COMPLETION_MINIMUM,
+    }
+
+def build_application_timeline(application):
+    progress_rank = {
+        'pending': 1,
+        'reviewed': 2,
+        'shortlisted': 3,
+        'interview_scheduled': 4,
+        'accepted': 5,
+        'rejected': 5,
+    }.get(application.status, 1)
+
+    final_label = 'Final decision'
+
+    if application.status == 'accepted':
+        final_label = 'Accepted'
+
+    elif application.status == 'rejected':
+        final_label = 'Rejected'
+
+    return [
+        {
+            'label': 'Submitted',
+            'date': application.applied_at,
+            'done': True,
+        },
+        {
+            'label': 'Reviewed by Employer',
+            'date': None,
+            'done': progress_rank >= 2,
+        },
+        {
+            'label': 'Shortlisted',
+            'date': None,
+            'done': progress_rank >= 3,
+        },
+        {
+            'label': 'Interview Scheduled',
+            'date': application.interview_date,
+            'done': progress_rank >= 4,
+        },
+        {
+            'label': final_label,
+            'date': None,
+            'done': progress_rank >= 5,
+        },
+    ]
 def build_absolute_url(request, view_name, *args):
 
     return request.build_absolute_uri(
@@ -37,6 +107,8 @@ def build_absolute_url(request, view_name, *args):
 @login_required
 def opportunity_list(request):
 
+    expire_past_deadline_opportunities()
+
     student = StudentProfile.objects.filter(
         user=request.user
     ).first()
@@ -49,7 +121,11 @@ def opportunity_list(request):
         return redirect('create_student_profile')
 
     query = request.GET.get('q', '').strip()
+    location_filter = request.GET.get('location', '').strip()
+    type_filter = request.GET.get('type', '').strip()
+    min_score_filter = request.GET.get('min_score', '').strip()
 
+    apply_state = get_student_apply_state(student)
     matched_results = get_matched_opportunities(student)
 
     if query:
@@ -65,7 +141,38 @@ def opportunity_list(request):
             or search_term in result['opportunity'].employer.company_name.lower()
         ]
 
+    if location_filter:
+
+        matched_results = [
+            result
+            for result in matched_results
+            if location_filter.lower() in result['opportunity'].location.lower()
+        ]
+
+    if type_filter:
+
+        matched_results = [
+            result
+            for result in matched_results
+            if result['opportunity'].internship_type == type_filter
+        ]
+
+    if min_score_filter:
+
+        try:
+            min_score_value = int(min_score_filter)
+        except ValueError:
+            min_score_value = 0
+
+        matched_results = [
+            result
+            for result in matched_results
+            if result['score'] >= min_score_value
+        ]
+
     for result in matched_results:
+
+        result['can_apply'] = apply_state['can_apply']
 
         result['already_applied'] = Application.objects.filter(
             student=student,
@@ -78,12 +185,22 @@ def opportunity_list(request):
         {
             'matched_results': matched_results,
             'query': query,
+            'location_filter': location_filter,
+            'type_filter': type_filter,
+            'min_score_filter': min_score_filter,
+            'profile_completion': apply_state['profile_completion'],
+            'missing_profile_items': apply_state['missing_profile_items'],
+            'can_apply': apply_state['can_apply'],
+            'profile_completion_minimum': PROFILE_COMPLETION_MINIMUM,
+            'internship_types': InternshipOpportunity.INTERNSHIP_TYPE_CHOICES,
         }
     )
 
 
 @login_required
 def opportunity_detail(request, opportunity_id):
+
+    expire_past_deadline_opportunities()
 
     opportunity = get_object_or_404(
         InternshipOpportunity,
@@ -100,6 +217,12 @@ def opportunity_detail(request, opportunity_id):
     missing_skills = []
     strengths = []
     explanations = []
+    recommendation_label = get_recommendation_label(score)
+    apply_state = {
+        'profile_completion': 0,
+        'missing_profile_items': [],
+        'can_apply': False,
+    }
 
     if student:
 
@@ -117,6 +240,11 @@ def opportunity_detail(request, opportunity_id):
         missing_skills = analysis.get('missing_skills', [])
         strengths = analysis.get('strengths', [])
         explanations = analysis.get('explanations', [])
+        recommendation_label = analysis.get(
+            'recommendation_label',
+            get_recommendation_label(score)
+        )
+        apply_state = get_student_apply_state(student)
 
     return render(
         request,
@@ -129,12 +257,19 @@ def opportunity_detail(request, opportunity_id):
             'missing_skills': missing_skills,
             'strengths': strengths,
             'explanations': explanations,
+            'recommendation_label': recommendation_label,
+            'profile_completion': apply_state['profile_completion'],
+            'missing_profile_items': apply_state['missing_profile_items'],
+            'can_apply': apply_state['can_apply'],
+            'profile_completion_minimum': PROFILE_COMPLETION_MINIMUM,
         }
     )
 
 
 @login_required
 def apply_opportunity(request, opportunity_id):
+
+    expire_past_deadline_opportunities()
 
     student = StudentProfile.objects.filter(
         user=request.user
@@ -151,6 +286,27 @@ def apply_opportunity(request, opportunity_id):
         InternshipOpportunity,
         id=opportunity_id
     )
+
+    apply_state = get_student_apply_state(student)
+
+    if not apply_state['can_apply']:
+        missing_items = ', '.join(apply_state['missing_profile_items'])
+        messages.warning(
+            request,
+            f'Complete at least {PROFILE_COMPLETION_MINIMUM}% of your profile before applying. Missing: {missing_items}.'
+        )
+        return redirect('opportunity_detail', opportunity_id=opportunity.id)
+
+    if opportunity.is_expired():
+        if opportunity.status == 'open':
+            opportunity.status = 'closed'
+            opportunity.save(update_fields=['status'])
+
+        messages.warning(
+            request,
+            f'This opportunity expired on {opportunity.deadline}. Applications are closed.'
+        )
+        return redirect('opportunity_detail', opportunity_id=opportunity.id)
 
     if opportunity.status != 'open':
         messages.warning(
@@ -377,6 +533,8 @@ def decline_interview(request, application_id):
 @login_required
 def employer_applications(request):
 
+    expire_past_deadline_opportunities()
+
     employer = EmployerProfile.objects.filter(
         user=request.user
     ).first()
@@ -389,15 +547,50 @@ def employer_applications(request):
         return redirect('create_employer_profile')
 
     status_filter = request.GET.get('status')
+    search_query = request.GET.get('q', '').strip()
+    course_filter = request.GET.get('course', '').strip()
+    skill_filter = request.GET.get('skill', '').strip()
+    institution_filter = request.GET.get('institution', '').strip()
+    min_score_filter = request.GET.get('min_score', '').strip()
 
     applications = Application.objects.filter(
         opportunity__employer=employer
+    ).select_related(
+        'student',
+        'opportunity'
     )
 
     if status_filter:
         applications = applications.filter(
             status=status_filter
         )
+
+    if search_query:
+        applications = applications.filter(
+            Q(student__full_name__icontains=search_query)
+            | Q(student__user__email__icontains=search_query)
+            | Q(opportunity__title__icontains=search_query)
+        )
+
+    if course_filter:
+        applications = applications.filter(
+            student__course__icontains=course_filter
+        )
+
+    if skill_filter:
+        applications = applications.filter(
+            student__skills__icontains=skill_filter
+        )
+
+    if institution_filter:
+        applications = applications.filter(
+            student__institution__icontains=institution_filter
+        )
+
+    try:
+        min_score_value = int(min_score_filter) if min_score_filter else 0
+    except ValueError:
+        min_score_value = 0
 
     ranked_applications = []
 
@@ -408,9 +601,16 @@ def employer_applications(request):
             application.opportunity
         )
 
+        if score < min_score_value:
+            continue
+
         ranked_applications.append({
             'application': application,
             'score': score,
+            'recommendation_label': analysis.get(
+                'recommendation_label',
+                get_recommendation_label(score)
+            ),
             'matched_skills': analysis.get('matched_skills', []),
             'missing_skills': analysis.get('missing_skills', []),
         })
@@ -426,6 +626,11 @@ def employer_applications(request):
         {
             'ranked_applications': ranked_applications,
             'status_filter': status_filter,
+            'search_query': search_query,
+            'course_filter': course_filter,
+            'skill_filter': skill_filter,
+            'institution_filter': institution_filter,
+            'min_score_filter': min_score_filter,
         }
     )
 
@@ -480,6 +685,7 @@ def application_detail(request, application_id):
             'academic_qualifications': academic_qualifications,
             'work_experiences': work_experiences,
             'referees': referees,
+            'timeline_events': build_application_timeline(application),
         }
     )
 
@@ -661,6 +867,8 @@ def schedule_interview(request, application_id):
 @login_required
 def create_opportunity(request):
 
+    expire_past_deadline_opportunities()
+
     employer = EmployerProfile.objects.filter(
         user=request.user
     ).first()
@@ -672,6 +880,12 @@ def create_opportunity(request):
         )
         return redirect('create_employer_profile')
 
+    if not request.user.is_approved:
+        messages.error(
+            request,
+            'Your employer account must be approved by admin before posting opportunities.'
+        )
+        return redirect('employer_profile')
     if request.method == 'POST':
 
         form = InternshipOpportunityForm(
@@ -706,6 +920,8 @@ def create_opportunity(request):
 
 @login_required
 def my_opportunities(request):
+
+    expire_past_deadline_opportunities()
 
     employer = EmployerProfile.objects.filter(
         user=request.user
@@ -1034,3 +1250,176 @@ def employer_applications_pdf(request):
     pdf.save()
 
     return response
+
+@login_required
+def application_messages(request, application_id):
+
+    application_query = Application.objects.select_related(
+        'student__user',
+        'opportunity__employer__user'
+    )
+
+    user_role = getattr(request.user, 'role', '')
+    application = None
+
+    if user_role == 'student':
+        student = StudentProfile.objects.filter(
+            user=request.user
+        ).first()
+
+        if student:
+            application = application_query.filter(
+                id=application_id,
+                student=student
+            ).first()
+
+    elif user_role == 'employer':
+        employer = EmployerProfile.objects.filter(
+            user=request.user
+        ).first()
+
+        if employer:
+            application = application_query.filter(
+                id=application_id,
+                opportunity__employer=employer
+            ).first()
+
+    elif request.user.is_staff or request.user.is_superuser or user_role == 'admin':
+        application = application_query.filter(
+            id=application_id
+        ).first()
+
+    if application is None:
+        messages.error(
+            request,
+            'You are not allowed to access this conversation.'
+        )
+        return redirect('dashboard')
+
+    ApplicationMessage.objects.filter(
+        application=application,
+        is_read=False
+    ).exclude(
+        sender=request.user
+    ).update(
+        is_read=True
+    )
+
+    if request.method == 'POST':
+        form = ApplicationMessageForm(request.POST)
+
+        if form.is_valid():
+            message = form.save(commit=False)
+            message.application = application
+            message.sender = request.user
+            message.save()
+
+            if request.user == application.student.user:
+                recipient = application.opportunity.employer.user
+                sender_label = application.student.full_name or request.user.username
+            else:
+                recipient = application.student.user
+                sender_label = application.opportunity.employer.company_name
+
+            notification_message = (
+                f'New message from {sender_label}.\n\n'
+                f'Opportunity: {application.opportunity.title}\n'
+                f'Message: {message.message}'
+            )
+
+            Notification.objects.create(
+                user=recipient,
+                message=notification_message
+            )
+
+            send_system_email(
+                subject=f'New Message - {application.opportunity.title}',
+                message=notification_message,
+                recipient_list=[recipient.email],
+                button_text='Open Conversation',
+                button_url=build_absolute_url(
+                    request,
+                    'application_messages',
+                    application.id
+                )
+            )
+
+            messages.success(
+                request,
+                'Message sent successfully.'
+            )
+
+            return redirect(
+                'application_messages',
+                application_id=application.id
+            )
+
+    else:
+        form = ApplicationMessageForm()
+
+    conversation_messages = ApplicationMessage.objects.filter(
+        application=application
+    ).select_related(
+        'sender'
+    )
+
+    return render(
+        request,
+        'internships/application_messages.html',
+        {
+            'application': application,
+            'conversation_messages': conversation_messages,
+            'timeline_events': build_application_timeline(application),
+            'form': form,
+        }
+    )
+@login_required
+def employer_conversations(request):
+
+    employer = EmployerProfile.objects.filter(
+        user=request.user
+    ).first()
+
+    if employer is None:
+        messages.error(
+            request,
+            'Please complete your employer profile first.'
+        )
+        return redirect('create_employer_profile')
+
+    applications = Application.objects.filter(
+        opportunity__employer=employer
+    ).select_related(
+        'student__user',
+        'opportunity'
+    ).order_by('-applied_at')
+
+    conversations = []
+
+    for application in applications:
+        last_message = ApplicationMessage.objects.filter(
+            application=application
+        ).select_related(
+            'sender'
+        ).order_by('-created_at').first()
+
+        unread_count = ApplicationMessage.objects.filter(
+            application=application,
+            is_read=False
+        ).exclude(
+            sender=request.user
+        ).count()
+
+        conversations.append({
+            'application': application,
+            'last_message': last_message,
+            'unread_count': unread_count,
+        })
+
+    return render(
+        request,
+        'internships/employer_conversations.html',
+        {
+            'conversations': conversations,
+        }
+    )

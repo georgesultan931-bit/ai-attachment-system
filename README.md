@@ -36,6 +36,7 @@ DJANGO_CSRF_TRUSTED_ORIGINS
 PUBLIC_SITE_URL
 DATABASE_URL
 DEFAULT_FROM_EMAIL
+EMAIL_SENDER_NAME
 EMAIL_ALLOW_INSECURE_SMTP_SSL
 EMAIL_HOST
 EMAIL_PORT
@@ -46,6 +47,26 @@ ADMIN_NOTIFICATION_EMAIL
 ```
 
 Email and WhatsApp provider credentials should be configured securely, not committed into GitHub.
+
+
+## Email Inbox Delivery
+
+To make password reset, verification, and chat alerts reach user inboxes more reliably, use a dedicated sender such as `noreply@your-domain.com`, set `EMAIL_SENDER_NAME`, and authenticate the domain with SPF, DKIM, and DMARC at your DNS provider. Code can improve headers and content, but inbox placement is decided by mailbox providers such as Gmail.
+
+For Render, set these email variables:
+
+```text
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=your-mailbox@your-domain.com
+EMAIL_HOST_PASSWORD=your-app-password
+DEFAULT_FROM_EMAIL=noreply@your-domain.com
+EMAIL_SENDER_NAME=AI Internship & Attachment System
+ADMIN_NOTIFICATION_EMAIL=admin@your-domain.com
+```
+
+Before presenting, send a password reset email to Gmail and use Show original to confirm SPF, DKIM, and DMARC show PASS.
 
 ## GitHub Push
 
@@ -68,6 +89,7 @@ Recommended production setup:
 - Run migrations on deployment.
 - Run collectstatic on deployment.
 - Configure email and WhatsApp credentials in the hosting dashboard or admin panel.
+- Before presenting, use a verified domain sender and confirm SPF, DKIM, and DMARC pass so email is more likely to reach Inbox.
 
 Do not commit:
 

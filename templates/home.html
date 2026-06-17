@@ -303,6 +303,82 @@
     color: #0f172a;
 }
 
+
+.home-chat-proof {
+    border-radius: 8px;
+    border: 1px solid #bae6fd;
+    background: #ffffff;
+    box-shadow: 0 16px 34px rgba(15, 23, 42, .08);
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.home-chat-proof-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr);
+    gap: 24px;
+    align-items: stretch;
+    padding: 26px;
+}
+
+.home-chat-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    background: #e0f2fe;
+    color: #075985;
+    font-weight: 900;
+    padding: 8px 12px;
+    margin-bottom: 14px;
+}
+
+.home-chat-proof h2 {
+    margin: 0 0 10px;
+    color: #0f172a;
+    font-weight: 900;
+}
+
+.home-chat-proof p {
+    color: #475569;
+    line-height: 1.58;
+    margin-bottom: 16px;
+}
+
+.home-chat-preview {
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 18px;
+    display: grid;
+    gap: 12px;
+}
+
+.chat-line {
+    max-width: 92%;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: .92rem;
+    line-height: 1.42;
+}
+
+.chat-line-employer {
+    background: #0f766e;
+    color: #ffffff;
+    justify-self: end;
+}
+
+.chat-line-student {
+    background: #e2e8f0;
+    color: #0f172a;
+    justify-self: start;
+}
+
+.home-chat-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
 body.dark-mode .home-stat,
 body.dark-mode .home-feature,
 body.dark-mode .home-flow {
@@ -328,12 +404,27 @@ body.dark-mode .flow-step {
     border-color: #334155;
 }
 
+body.dark-mode .home-chat-proof {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+body.dark-mode .home-chat-proof h2 {
+    color: #e5e7eb;
+}
+
+body.dark-mode .home-chat-proof p {
+    color: #cbd5e1;
+}
 @media (max-width: 992px) {
     .home-stats,
     .home-feature-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .home-chat-proof-inner {
+        grid-template-columns: 1fr;
+    }
     .home-flow-grid {
         grid-template-columns: 1fr;
     }
@@ -445,6 +536,54 @@ body.dark-mode .flow-step {
     </section>
 
 
+
+    <section class="home-chat-proof" aria-label="Employer student chat box">
+        <div class="home-chat-proof-inner">
+            <div>
+                <div class="home-chat-label">
+                    <i class="bi bi-chat-dots-fill"></i>
+                    Live Chat Box Feature
+                </div>
+
+                <h2>Chat Box for Employers and Students</h2>
+                <p>
+                    Employers can read and type messages with students who applied, and students reply from their application page.
+                    Email alerts still use the same registered account email.
+                </p>
+
+                <div class="home-chat-actions">
+                    {% if user.is_authenticated and user.role == 'employer' %}
+                        <a href="{% url 'employer_conversations' %}" class="btn btn-dark">
+                            Open Employer Chat Box
+                        </a>
+                        <a href="{% url 'employer_applications' %}" class="btn btn-outline-dark">
+                            Candidate Ranking Board
+                        </a>
+                    {% elif user.is_authenticated and user.role == 'student' %}
+                        <a href="{% url 'my_applications' %}" class="btn btn-dark">
+                            Open My Chat Box
+                        </a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-dark">
+                            Login to Use Chat Box
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="home-chat-preview" aria-label="Chat box preview">
+                <div class="chat-line chat-line-employer">
+                    Hello, you have been shortlisted for ICT Attachment. Are you available for an interview?
+                </div>
+                <div class="chat-line chat-line-student">
+                    Yes, I am available. Please share the interview details.
+                </div>
+                <div class="chat-line chat-line-employer">
+                    Great. Open your application timeline to see the schedule.
+                </div>
+            </div>
+        </div>
+    </section>
     <section class="home-feature-grid" aria-label="Core features">
         <div class="home-feature">
             <div class="icon-box icon-teal">1</div>

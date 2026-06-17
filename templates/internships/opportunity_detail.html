@@ -19,7 +19,7 @@
                 </strong>
 
                 <span class="fw-bold">
-                    {{ score }}%
+                    {{ score }}% - {{ recommendation_label }}
                 </span>
 
             </div>
@@ -254,6 +254,32 @@
 
             </small>
 
+        {% elif opportunity.is_expired %}
+
+            <button class="btn btn-danger" disabled>
+                Applications Closed
+            </button>
+
+            <small class="text-muted d-block mt-1">
+                This opportunity expired on {{ opportunity.deadline }}.
+            </small>
+
+        {% elif not can_apply %}
+
+            <button class="btn btn-warning" disabled>
+                Complete Profile First
+            </button>
+
+            <small class="text-muted d-block mt-1">
+                Your profile is {{ profile_completion }}% complete. Reach {{ profile_completion_minimum }}% before applying.
+                {% if missing_profile_items %}
+                    Missing:
+                    {% for item in missing_profile_items %}
+                        {{ item }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </small>
+
         {% else %}
 
             <a class="btn btn-primary"
@@ -264,7 +290,6 @@
             </a>
 
         {% endif %}
-
         <a class="btn btn-outline-dark"
            href="{% url 'opportunity_list' %}">
 

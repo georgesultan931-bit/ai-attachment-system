@@ -89,6 +89,7 @@
                         <th>Status</th>
                         <th>Applied Date</th>
                         <th>Interview Details</th>
+                        <th>Chat Box</th>
                     </tr>
                 </thead>
 
@@ -172,12 +173,19 @@
 
                             {% endif %}
                         </td>
+
+                        <td>
+                            <a href="{% url 'application_messages' application.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-chat-dots-fill"></i>
+                                Chat Box
+                            </a>
+                        </td>
                     </tr>
 
                 {% empty %}
 
                     <tr>
-                        <td colspan="5" class="text-center text-muted">
+                        <td colspan="6" class="text-center text-muted">
                             No applications found.
                         </td>
                     </tr>
